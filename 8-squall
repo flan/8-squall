@@ -1,96 +1,66 @@
 #!/bin/env python3
-
-import random
+# -*- coding: utf-8 -*-
+import collections
+import importlib
+import json
 import traceback
 
 import discord
 
-from calc import calc
-
-_RESPONSES_8SQUALL = (
- "Meh.",
- "Whatever.",
- "Go away.",
- "...",
- "You're on your own.",
- "Leave me alone.",
- "Just give up.",
- "My sources say '...'",
- "All signs point to 'whatever'.",
-)
-
-_RESPONSES_8BALL = (
- "Don't count on it.",
- "Most certainly.",
- "Probably.",
- "My sources say no.",
- "No.",
- "The outlook is promising.",
- "The outlook is bleak.",
- "All signs point to yes.",
- "As I see it, yes.",
- "Based on all I know, no.",
- "You're better off not knowing.",
-)
+_PluginSpec = collections.namedtuple("PluginSpec", (
+    "module",
+    "disallowed_channels",
+    "disallowed_servers",
+    "allowed_channels", #exceptions to allow responses on otherwise disallowed servers
+))
+_PLUGINS = tuple(_PluginSpec(
+    importlib.import_module('.' + plugin_spec['plugin'], 'lib8squall_plugins'),
+    plugin_spec.get("disallowedChannels", ()),
+    plugin_spec.get("disallowedServers", ()),
+    plugin_spec.get("allowedChannels", ()),
+) for plugin_spec in json.load(open('./plugin-specs.json')))
 
 class Magic8Squall(discord.Client):
     async def on_ready(self):
-        print('Logged on as', self.user)
+        print('Logged on as {}'.format(self.user))
 
     async def on_message(self, message):
         #take a look at https://discordpy.readthedocs.io/en/latest/api.html#message
         #to see what data you can play with
 
-        #no point processing our own messages
+        #no point in processing our own messages
         if message.author == self.user:
             return
-
-        if '?' in message.content and self.user in message.mentions:
-            if random.randint(0, 2) == 2:
-                response = message.author.display_name + ", 8-Squall speaks: " + random.choice(_RESPONSES_8SQUALL)
-            else:
-                response = message.author.display_name + ", 8-Squall's 8-Ball has concluded: " + random.choice(_RESPONSES_8BALL)
-
-            await message.channel.send(response)
-        elif message.content.startswith(('!calc ', '!calc\n')):
-            request = message.content[6:]
-            request_lower = request.lower()
             
-            if request_lower == 'list':
-                session = calc.Session()
-                
-                output = []
-                output.append("Built-in operators:")
-                output.append("`{}`".format(',  '.join(('+', '-', '*', '/', '\\', '^', '%', '<', '>'))))
-                output.append("Built-in functions:")
-                output.append("`{}`".format(',  '.join(session.listFunctions())))
-                output.append("Built-in variables:")
-                output.append("`{}`".format(',  '.join(session.listVariables())))
-                
-                await message.channel.send('\n'.join(output))
-            elif request_lower == 'help':
-                await message.channel.send('\n'.join((
-                    "`!calc <variable | function | equation>[; ...][\\n ...] | list`",
-                    "The order of input does not matter.",
-                    "",
-                    "Function parameters must be scalars or variables;",
-                    "directly nesting a function will prevent compilation.",
-                )))
+        try:
+            for plugin in _PLUGINS:
+                if message.channel.id in plugin.disallowed_channels:
+                    continue
+                if message.channel.guild.id in plugin.disallowed_servers:
+                    if message.channel.id not in plugin.allowed_channels:
+                        continue
+                        
+                if await plugin.module.handle_message(self, message):
+                    break #message was handled
             else:
-                try:
-                    session = calc.Session(request.replace('\n', ';'))
-                    (variables, equations) = session.evaluate()
-                    
-                    if equations:
-                        output = []
-                        output.extend("- `{} = {}`".format(name, value) for (name, value) in variables)
-                        output.extend("`{}` = `{}`".format(equation, value) for (equation, value) in equations)
-                        await message.channel.send('\n'.join(output))
-                    else:
-                        await message.channel.send("No expressions provided.")
-                except Exception as e:
-                    traceback.print_exc()
-                    await message.channel.send("Something went wrong. {}: {}".format(e.__class__.__name__, e))
-                    
+                if client.user in message.mentions:
+                    help_summaries = []
+                    for plugin in _PLUGINS:
+                        if message.channel.id in plugin.disallowed_channels:
+                            continue
+                        if message.channel.guild.id in plugin.disallowed_servers:
+                            if message.channel.id not in plugin.allowed_channels:
+                                continue
+                                
+                        help_summaries.append(plugin.module.HELP_SUMMARY.strip())
+                        
+                    if help_summaries:
+                        await message.channel.send(
+                            content="\n\n".join(help_summaries),
+                            delete_after=(4.0 * len(help_summaries)),
+                        )
+        except Exception:
+            traceback.print_exc()
+            
 client = Magic8Squall()
 client.run(open('./discord-token').read().strip())
