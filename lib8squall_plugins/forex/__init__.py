@@ -2,7 +2,7 @@
 import re
 
 from . import currencies
-from . import status
+from . import rates
 
 HELP_SUMMARY = "`!curr [quantity] <symbol> [to|from] <symbol>` for currency conversion."
 
@@ -31,18 +31,13 @@ async def handle_message(client, message):
                 quantity = float(quantity)
                 
             if query_match['dir'] == 'from':
-                rates = status.get_rates(cur2)
-                await message.channel.send("{}, {}{} {} = {}{} {}.".format(
-                    message.author.display_name,
-                    cur1.symbol, quantity, cur1.code,
-                    cur2.symbol, quantity * rates[cur1], cur2.code,
-                ))
+                current_rate = rates.get_rates(cur2)[cur1]
             else: #assume 'to'
-                rates = status.get_rates(cur1)
-                await message.channel.send("{}, {}{} {} = {}{} {}.".format(
-                    message.author.display_name,
-                    cur1.symbol, quantity, cur1.code,
-                    cur2.symbol, quantity * rates[cur2], cur2.code,
-                ))
+                current_rate = rates.get_rates(cur1)[cur2]
+            await message.channel.send("{}, {}{} {} = {}{} {}.".format(
+                message.author.display_name,
+                cur1.symbol, quantity, cur1.code,
+                cur2.symbol, quantity * current_rate, cur2.code,
+            ))
         return True
     return False
