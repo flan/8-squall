@@ -32,15 +32,9 @@ _RESPONSES_8BALL = (
 async def handle_message(client, message):
     if '?' in message.content and client.user in message.mentions:
         if random.randint(0, 2) == 2: #33% chance of getting Squall
-            response = "{}, {}".format(
-                message.author.display_name,
-                random.choice(_RESPONSES_8SQUALL),
-            )
+            response = random.choice(_RESPONSES_8SQUALL)
         else:
-            response = "{}, my 8-Ball has concluded: {}".format(
-                message.author.display_name,
-                random.choice(_RESPONSES_8BALL),
-            )
-        await message.channel.send(response)
+            response = "The 8-Ball has concluded: {}".format(random.choice(_RESPONSES_8BALL))
+        await message.reply(response)
         return True
     return False

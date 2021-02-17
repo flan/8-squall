@@ -16,16 +16,15 @@ async def handle_message(client, message):
             
             cur1 = currencies.get_currency(query_match['cur1'])
             if not cur1:
-                await message.channel.send("{} is not a supported currency, {}.".format(query_match['cur1'], message.author.display_name))
+                await message.reply("{} is not a supported currency.".format(query_match['cur1'].upper()))
                 return True
-            
             cur2 = currencies.get_currency(query_match['cur2'])
             if not cur2:
-                await message.channel.send("{} is not a supported currency, {}.".format(query_match['cur2'], message.author.display_name))
+                await message.reply("{} is not a supported currency.".format(query_match['cur2'].upper()))
                 return True
                 
             quantity = query_match['qty']
-            if quantity is None or quantity == '.':
+            if quantity is None or quantity == '.': #the regex allows '.' for the sake of readability
                 quantity = 1.0
             else:
                 quantity = float(quantity)
@@ -34,8 +33,7 @@ async def handle_message(client, message):
                 current_rate = rates.get_rates(cur2)[cur1]
             else: #assume 'to'
                 current_rate = rates.get_rates(cur1)[cur2]
-            await message.channel.send("{}, {}{} {} = {}{} {}.".format(
-                message.author.display_name,
+            await message.reply("{}{} {} = {}{} {}.".format(
                 cur1.symbol, quantity, cur1.code,
                 cur2.symbol, quantity * current_rate, cur2.code,
             ))

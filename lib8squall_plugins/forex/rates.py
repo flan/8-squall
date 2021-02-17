@@ -22,9 +22,9 @@ def get_rates(currency):
         
         if rates:
             date_difference = current_time.tm_yday - rates.date.tm_yday
-            if (
+            if current_time.tm_year == rates.date.tm_year and (
                 date_difference == 0 or #today's data already available
-                date_difference == 1 and current_time.tm_hour < 15 #upstream data hasn't updated
+                (date_difference == 1 and current_time.tm_hour < 15) #upstream data hasn't updated
             ):
                 return rates
                 
@@ -36,4 +36,3 @@ def get_rates(currency):
         )
         
         return rates.rates
-        

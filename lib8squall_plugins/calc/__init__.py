@@ -28,9 +28,9 @@ async def handle_message(client, message):
             output.append("Built-in variables:")
             output.append("`{}`".format(',  '.join(session.listVariables())))
             
-            await message.channel.send('\n'.join(output))
+            await message.reply('\n'.join(output))
         elif request_lower == 'help':
-            await message.channel.send('\n'.join((
+            await message.reply('\n'.join((
                 "`!calc <variable | function | equation>[; ...][\\n ...] | list`",
                 "The order of input does not matter.",
                 "",
@@ -46,11 +46,11 @@ async def handle_message(client, message):
                     output = []
                     output.extend("- `{} = {}`".format(name, _try_int(value)) for (name, value) in variables)
                     output.extend("`{}` = `{}`".format(equation, _try_int(value)) for (equation, value) in equations)
-                    await message.channel.send('\n'.join(output))
+                    await message.reply('\n'.join(output))
                 else:
-                    await message.channel.send("No expressions provided.")
+                    await message.reply("No expressions provided.")
             except Exception as e:
-                await message.channel.send("Something went wrong. {}: {}".format(
+                await message.reply("Something went wrong. {}: {}".format(
                     e.__class__.__name__,
                     e,
                 ))

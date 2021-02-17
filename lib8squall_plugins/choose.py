@@ -18,11 +18,8 @@ async def handle_message(client, message):
         choices = [i for i in (j.strip() for j in choices) if i]
         
         if len(choices) >= 2:
-            await message.channel.send("{}, {}".format(
-                message.author.display_name,
-                random.choice(choices),
-            ))
+            await message.reply(random.choice(choices))
         else:
-            await message.channel.send("There was nothing to choose between, {}; give me a list separated by commas, semicolons, or linebreaks.".format(message.author.display_name))
+            await message.reply("There was nothing to choose between; provide a list separated by commas, semicolons, or linebreaks.")
         return True
     return False
