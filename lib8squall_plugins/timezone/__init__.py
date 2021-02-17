@@ -25,3 +25,11 @@ you, <time> MST (UTC-7) was 2 hours, 34 minutes ago.
 7 25 am
 125pm
 125
+125h
+
+import re
+
+_AM_PM_RE = re.compile(r"\s*(?<hour>\d{1,2})(?:\s+|:|\.)?(?<minute>\d{2})?\s*(?<am_pm>[aApP][mM])\s+")
+_24H_RE = re.compile(r"\s*(?<hour>\d{1,2})(?:\s+|:|\.)?(?<minute>\d{2})?\s*(?:[hH])?\s+")
+
+#try am/pm matching first, then 24h; normalise either one to 24h, then build a timestamp value
