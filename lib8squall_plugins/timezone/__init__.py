@@ -13,3 +13,13 @@ If given a timestamp and a timezone, display the amount of time between now and 
 you, <time> MST (UTC-7) is 6 hours, 34 minutes from now.
 #or, if it was less than three hours ago
 you, <time> MST (UTC-7) was 2 hours, 34 minutes ago.
+
+#don't use dateutil; instead, just apply reasonable inference against input strings
+7pm
+7:30 pm
+1400
+1400h
+14:00
+14h
+725am
+7 25 am
