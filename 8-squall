@@ -24,14 +24,21 @@ class Magic8Squall(discord.Client):
     async def on_ready(self):
         print('Logged on as {}'.format(self.user))
 
+    #https://discordpy.readthedocs.io/en/latest/api.html#message
     async def on_message(self, message):
-        #take a look at https://discordpy.readthedocs.io/en/latest/api.html#message
-        #to see what data you can play with
-
         #no point in processing our own messages
         if message.author == self.user:
             return
             
+        if message.mentions:
+            #Don't try to interact with broad notifications
+            if len(message.mentions) > 1:
+                return
+                
+            #Someone else was @ed, which may be a "here's how you do this"; don't try to parse it
+            if client.user not in message.mentions:
+                return
+                
         try:
             for plugin in _PLUGINS:
                 if message.channel.id in plugin.disallowed_channels:

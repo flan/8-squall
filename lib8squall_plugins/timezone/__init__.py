@@ -1,15 +1,4 @@
-"""
-If given one or more timezones, display the current time there and in UTC, plus each timezone's UTC offset
-
-!tz MST EST
-<you>, it is currently <datetime> MST (UTC-7), <datetime> EST (UTC-5), and <datetime> UTC.
-#if a DST target is incorrectly specified, add a final line saying "a DST timezone was specified, but DST is not in effect" or "a non-DST timezone was specified, but DST is in effect"
-#try to find a database of DST values to make this possible
-#the first draft might either omit this check or only do it for North American locations, since
-#those seem to have the least-worldly populace
-
-"""
-
+# -*- coding: utf-8 -*-
 import collections
 import datetime
 import re
@@ -45,6 +34,10 @@ _TIMEZONE_MAPPING = {
     'PT': _TimezoneMapping('Canada/Pacific', None),
     'PST': _TimezoneMapping('Canada/Pacific', 'PST'),
     'PDT': _TimezoneMapping('Canada/Pacific', 'PDT'),
+    'AZ': _TimezoneMapping('MST7MDT', None), #Arizona
+    
+    'HST': _TimezoneMapping('Pacific/Honolulu', 'HST'),
+    'HDT': _TimezoneMapping('Pacific/Honolulu', 'HDT'),
     
     'AKT': _TimezoneMapping('US/Alaska', None),
     'AKDT': _TimezoneMapping('US/Alaska', 'AKDT'),
@@ -59,6 +52,13 @@ _TIMEZONE_MAPPING = {
     'AWT': _TimezoneMapping('Australia/Perth', None),
     'AWST': _TimezoneMapping('Australia/Perth', 'AWST'),
     'AWDT': _TimezoneMapping('Australia/Perth', 'AWDT'),
+    
+    'NZT': _TimezoneMapping('Pacific/Auckland', None),
+    'NZDT': _TimezoneMapping('Pacific/Auckland', 'NZDT'),
+    'NZST': _TimezoneMapping('Pacific/Auckland', 'NZST'),
+    'CHAT': _TimezoneMapping('Pacific/Chatham', None),
+    'CHADT': _TimezoneMapping('Pacific/Chatham', 'CHADT'),
+    'CHAST': _TimezoneMapping('Pacific/Chatham', 'CHAST'),
     
     'CAT': _TimezoneMapping('Africa/Gaborone', None),
     'EAT': _TimezoneMapping('Africa/Nairobi', None),
@@ -76,6 +76,32 @@ _TIMEZONE_MAPPING = {
     
     'MSK': _TimezoneMapping('Europe/Moscow', 'MSK'),
     'MSD': _TimezoneMapping('Europe/Moscow', 'MSD'),
+    
+    'JT': _TimezoneMapping('Asia/Tokyo', None),
+    'JDT': _TimezoneMapping('Asia/Tokyo', 'JDT'),
+    'JST': _TimezoneMapping('Asia/Tokyo', 'JST'),
+    'KT': _TimezoneMapping('Asia/Seoul', None),
+    'KDT': _TimezoneMapping('Asia/Seoul', 'KDT'),
+    'KST': _TimezoneMapping('Asia/Seoul', 'KST'),
+    
+    #China uses "CST", which conflicts with the American zone
+    'CHINA': _TimezoneMapping('Asia/Shanghai', None),
+    'BEIJING': _TimezoneMapping('Asia/Shanghai', None),
+    'BT': _TimezoneMapping('Asia/Shanghai', None),
+    
+    'HKT': _TimezoneMapping('Asia/Hong_Kong', None),
+    
+    'ICT': _TimezoneMapping('Asia/Bangkok', None),
+    'MMT': _TimezoneMapping('Asia/Yangon', None),
+    
+    'WIB': _TimezoneMapping('Asia/Jakarta', None),
+    'WITA': _TimezoneMapping('Asia/Makassar', None),
+    'WIT': _TimezoneMapping('Asia/Jayapura', None),
+    
+    'SST': _TimezoneMapping('Asia/Singapore', None),
+    'SGT': _TimezoneMapping('Asia/Singapore', None),
+    'MYT': _TimezoneMapping('Asia/Kuala_Lumpur', None),
+    'PHT': _TimezoneMapping('Asia/Manila', None),
 }
 
 def _prepare_localised_value(identifier, dt):
@@ -125,78 +151,78 @@ def _format_delta(delta):
         delta_minutes, delta_minutes != 1 and 's' or '',
     )
     
-def test(timezone):
+def _handle_timezone_delta(target, timzeone_mismatch):
+    target_time = target.timestamp()
     current_time = time.time()
-    for t in tests:
-        print(t)
-        (target, timezone_mismatch) = _parse_timestamp_request('{} {}'.format(t, timezone))
-        if target:
-            target_time = target.timestamp()
-            value_in_past = False
-            if target_time < current_time:
-                delta = current_time - target_time
-                if delta <= _HALF_DAY:
-                    value_in_past = True
-                    delta_string = _format_delta(delta)
-                else:
-                    while target_time < current_time: #The internaional date line is annoying
-                        target_time += _ONE_DAY
-                        
-            if not value_in_past:
-                delta_string = _format_delta(target_time - current_time)
-                
-                print("{} is {} from now{}".format(
-                    _format_timestamp(target), delta_string,
-                    timezone_mismatch and "; your requested timezone was corrected for DST" or ""
-                ))
-            else:
-                print("{} was {} ago{}".format(
-                    _format_timestamp(target), delta_string,
-                    timezone_mismatch and "; your requested timezone was corrected for DST" or ""
-                ))
-                
     
+    value_in_past = False
+    if target_time < current_time:
+        delta = current_time - target_time
+        if delta <= _HALF_DAY:
+            value_in_past = True
+        else:
+            while target_time < current_time: #The internaional date line is annoying
+                target_time += _ONE_DAY
+            delta = target_time - current_time
+    else:
+        delta = target_time - current_time
+        
+    if not value_in_past:
+        response_core = "{} is {} from now".format(
+            _format_timestamp(target),
+            _format_delta(delta),
+        )
+    else:
+        response_core = "{} was {} ago".format(
+            _format_timestamp(target),
+            _format_delta(delta),
+        )
+        
+    return "{}{}.".format(
+        response_core,
+        timezone_mismatch and "; your requested timezone was corrected for current DST" or "",
+    )
+    
+
+def _prepare_current_value(identifier):
+    if '/' not in identifier:
+        identifier = identifier.upper()
+    tzmapping = _TIMEZONE_MAPPING.get(identifier) or _TimezoneMapping(identifier, None)
+    timezone = pytz.timezone(tzmapping.canonical_identifier)
+    
+    current_value = timezone.fromutc(datetime.datetime.utcnow())
+    
+    if tzmapping.expected_identifier is not None:
+        if current_value.tzname() != tzmapping.expected_identifier:
+            return (current_value, True)
+    return (current_value, False)
+    
+def _handle_timezone_list(identifiers):
+    responses = []
+    for identifier in identifiers:
+        if identifier:
+            (current_value, timezone_mismatch) = _prepare_current_value(identifier)
+            responses.append("{}{}".format(
+                _format_timestamp(current_value),
+                timezone_mismatch and "; your requested timezone was corrected for current DST" or "",
+            ))
+            
+    if responses:
+        return '\n'.join(responses)
+    else:
+        return "No timezones were specified."
+        
 
 async def handle_message(client, message):
     if message.content.startswith('!tz '):
+        request = message.content[4:]
         try:
-            (target, timezone_mismatch) = _parse_timestamp_request('{} {}'.format(t, timezone))
-            if target: #it's a timezone delta request
-                target_time = target.timestamp()
-                current_time = time.time()
-                
-                value_in_past = False
-                if target_time < current_time:
-                    delta = current_time - target_time
-                    if delta <= _HALF_DAY:
-                        value_in_past = True
-                    else:
-                        while target_time < current_time: #The internaional date line is annoying
-                            target_time += _ONE_DAY
-                        delta = target_time - current_time
-                else:
-                    delta = target_time - current_time
-                    
-                if not value_in_past:
-                    response_core = "{} is {} from now".format(
-                        _format_timestamp(target),
-                        _format_delta(delta),
-                    )
-                else:
-                    response_core = "{} was {} ago".format(
-                        _format_timestamp(target),
-                        _format_delta(delta),
-                    )
-                    
-                await message.reply("{}{}.".format(
-                    response_core,
-                    timezone_mismatch and "; your requested timezone was corrected for current DST" or "",
-                ))
+            (target, timezone_mismatch) = _parse_timestamp_request(request)
+            if target:
+                await message.reply(_handle_timezone_delta(target, timezone_mismatch))
+            else:
+                await message.reply(_handle_timezone_list(tz.strip() for tz in request.split()))
         except pytz.exceptions.UnknownTimeZoneError as e:
             await message.reply("Unsupported timezone: {}".format(e))
         return True
     return False
-
-
-
-x.fromutc(datetime.datetime.utcnow()).strftime('%T %Z (UTC%z)')
