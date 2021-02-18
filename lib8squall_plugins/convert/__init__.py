@@ -2,7 +2,7 @@
 
 #weight {mg, g, kg, tonne, oz, lb[s], ton}
 
-#force {
+#force {n, newton, lb[s]}
 
 #length {mm, cm, m, km, in, ft, yd[s], mi}
 
@@ -12,7 +12,7 @@
 
 #pressure {pascal, pound/foot, bar[s]}
 
-#volume {litre, quart}
+#volume {litre, quart, floz}
 
 #look at the first unit and try to find a match for the second, searching all of the type-specific submodules
 #if no match is found, proceed to the next, otherwise return and run the function (with type-notation strings)
