@@ -12,24 +12,22 @@ async def handle_message(client, message):
     if message.content.startswith('!curr '):
         query_match = _QUERY_RE.search(message.content[6:])
         if query_match:
-            query_match = query_match.groupdict()
-            
-            cur1 = currencies.get_currency(query_match['cur1'])
+            cur1 = currencies.get_currency(query_match.group('cur1'))
             if not cur1:
-                await message.reply("{} is not a supported currency.".format(query_match['cur1'].upper()))
+                await message.reply("{} is not a supported currency.".format(query_match.group('cur1').upper()))
                 return True
-            cur2 = currencies.get_currency(query_match['cur2'])
+            cur2 = currencies.get_currency(query_match.group('cur2'))
             if not cur2:
-                await message.reply("{} is not a supported currency.".format(query_match['cur2'].upper()))
+                await message.reply("{} is not a supported currency.".format(query_match.group('cur2').upper()))
                 return True
                 
-            quantity = query_match['qty']
+            quantity = query_match.group('qty')
             if quantity is None or quantity == '.': #the regex allows '.' for the sake of readability
                 quantity = 1.0
             else:
                 quantity = float(quantity)
                 
-            if query_match['dir'] == 'from':
+            if query_match.group('dir') == 'from':
                 current_rate = rates.get_rates(cur2)[cur1]
             else: #assume 'to'
                 current_rate = rates.get_rates(cur1)[cur2]
