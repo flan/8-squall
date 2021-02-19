@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
-from . import arc
+from . import angle
 from . import area
 from . import energy
 from . import force
@@ -46,15 +46,15 @@ async def handle_message(client, message):
                 quantity = float(quantity)
                 
             for module in (
-                arc,
+                temperature,
+                length,
+                weight,
+                volume,
+                angle,
                 area,
                 energy,
                 force,
-                length,
                 pressure,
-                temperature,
-                weight,
-                volume,
             ):
                 result = _process(module, quantity, unit1, unit2)
                 if result:
@@ -63,7 +63,7 @@ async def handle_message(client, message):
                         (quantity, result) = (result, quantity)
                         (normalised_unit1, normalised_unit2) = (normalised_unit2, normalised_unit1)
                         
-                    await message.reply("{:.2f} {} = {:.2f} {}.".format(
+                    await message.reply("{:.2f}{} = {:.2f}{}.".format(
                         quantity, normalised_unit1,
                         result, normalised_unit2,
                     ))

@@ -9,3 +9,8 @@
 #never learn from messages that include mentions
 
 #add a badwords filter on learning (and production) that disqualifies a string from being ingested.
+
+#give each server its own personality instance
+#should there be a per-user learning flag on a per-server basis? Probably.
+
+#DMs have a shared instance of their own
