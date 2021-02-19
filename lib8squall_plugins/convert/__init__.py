@@ -8,12 +8,14 @@ from . import force
 from . import length
 from . import pressure
 from . import temperature
+from . import timeconv
 from . import volume
 from . import weight
 
-HELP_SUMMARY = "`!conv [quantity] <unit> [to|from] <unit>` for scale conversion."
+def get_help_summary(client, message):
+    return ("`!conv [quantity] <unit> [to] <unit>` for scale conversion.",)
 
-_QUERY_RE = re.compile(r'(?P<qty>\d*\.?\d*)?\s*(?P<unit1>\w+)\s+(?:(?P<dir>to|from)\s+)?(?P<unit2>\w+)')
+_QUERY_RE = re.compile(r'(?P<qty>\d*\.?\d*)?\s*(?P<unit1>\w+)\s+(?:to\s+)?(?P<unit2>\w+)')
 
 def _process(module, quantity, unit1, unit2):
     decoder = module.DECODERS.get(unit1)
@@ -34,11 +36,6 @@ async def handle_message(client, message):
             unit1 = query_match.group('unit1').title()
             unit2 = query_match.group('unit2').title()
             
-            dir_to = True
-            if query_match.group('dir') == 'from':
-                dir_to = False
-                (unit1, unit2) = (unit2, unit1)
-                
             quantity = query_match.group('qty')
             if quantity is None or quantity == '.': #the regex allows '.' for the sake of readability
                 quantity = 1.0
@@ -51,6 +48,7 @@ async def handle_message(client, message):
                 weight,
                 volume,
                 angle,
+                timeconv,
                 area,
                 energy,
                 force,
@@ -59,11 +57,7 @@ async def handle_message(client, message):
                 result = _process(module, quantity, unit1, unit2)
                 if result:
                     (result, normalised_unit1, normalised_unit2) = result
-                    if not dir_to:
-                        (quantity, result) = (result, quantity)
-                        (normalised_unit1, normalised_unit2) = (normalised_unit2, normalised_unit1)
-                        
-                    await message.reply("{:.2f}{} = {:.2f}{}.".format(
+                    await message.reply("{:.2f}{} = {:.2f}{}".format(
                         quantity, normalised_unit1,
                         result, normalised_unit2,
                     ))

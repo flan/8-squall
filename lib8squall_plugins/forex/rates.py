@@ -26,7 +26,7 @@ def get_rates(currency):
                 date_difference == 0 or #today's data already available
                 (date_difference == 1 and current_time.tm_hour < 15) #upstream data hasn't updated
             ):
-                return rates
+                return rates.rates
                 
         rates_data = requests.get("https://api.ratesapi.io/api/latest", params={"base": currency.code}).json()
         

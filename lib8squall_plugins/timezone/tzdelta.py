@@ -25,7 +25,7 @@ def _prepare_localised_value(identifier, dt):
 _AM_PM_RE = re.compile(r"\s*(?P<hour>\d|1[0-2])(?:\s+|:|\.)?(?P<minute>[0-5]\d)?\s*(?P<am_pm>[aApP][mM]?)\s+(?P<timezone>\w+(?:/\w+)?)")
 _24H_RE = re.compile(r"\s*(?P<hour>1?\d|2[0-4])(?:\s+|:|\.)?(?P<minute>[0-5]\d)?\s*(?:[hH])?\s+(?P<timezone>\w+(?:/\w+)?)")
 
-def _parse_timestamp_request(request):
+def parse_timestamp_request(request):
     match = _AM_PM_RE.match(request) or _24H_RE.match(request)
     if not match:
         return (None, False)
@@ -43,11 +43,6 @@ def _parse_timestamp_request(request):
         hour, minute,
     ))
     
-def _format_timestamp(timestamp):
-    if timestamp.hour <= 12:
-        return timestamp.strftime("%H:%M %Z (UTC%z)")
-    return timestamp.strftime("%H:%M (%I:%M%P) %Z (UTC%z)")
-    
 def _format_delta(delta):
     delta_hours = int(delta / 3600)
     delta_minutes = int((delta - (delta_hours * 3600)) / 60)
@@ -57,7 +52,7 @@ def _format_delta(delta):
         delta_minutes, delta_minutes != 1 and 's' or '',
     )
     
-def handle_timezone_delta(target, timzeone_mismatch):
+def handle_timezone_delta(target, timezone_mismatch):
     target_time = target.timestamp()
     current_time = time.time()
     
@@ -75,16 +70,16 @@ def handle_timezone_delta(target, timzeone_mismatch):
         
     if not value_in_past:
         response_core = "{} is {} from now".format(
-            _format_timestamp(target),
+            common.format_timestamp(target),
             _format_delta(delta),
         )
     else:
         response_core = "{} was {} ago".format(
-            _format_timestamp(target),
+            common.format_timestamp(target),
             _format_delta(delta),
         )
         
-    return "{}{}.".format(
+    return "{}{}".format(
         response_core,
         timezone_mismatch and "; your requested timezone was corrected for current DST" or "",
     )

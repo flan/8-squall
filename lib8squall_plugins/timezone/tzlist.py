@@ -19,7 +19,7 @@ def handle_timezone_list(identifiers):
         if identifier:
             (current_value, timezone_mismatch) = _prepare_current_value(identifier)
             responses.append("{}{}".format(
-                _format_timestamp(current_value),
+                common.format_timestamp(current_value),
                 timezone_mismatch and "; your requested timezone was corrected for current DST" or "",
             ))
             

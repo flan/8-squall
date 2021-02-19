@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import random
 
-HELP_SUMMARY = "@ me and include a question-mark to get an 8-ball response."
+def get_help_summary(client, message):
+    return ("@ me and include a question-mark to get an 8-ball response.",)
 
 _RESPONSES_8SQUALL = (
  "Meh.",

@@ -14,17 +14,17 @@ def _to_second(intermediate):
     return (intermediate, 's')
 ENCODERS['S'] = _to_second
 ENCODERS['Second'] = _to_second
-ENCODERS['Seconds'] = _to_seconds
+ENCODERS['Seconds'] = _to_second
 
 
 def _from_minute(quantity):
-    return (quantity * 60.0, 's')
+    return (quantity * 60.0, 'm')
 DECODERS['M'] = _from_minute
 DECODERS['Minute'] = _from_minute
 DECODERS['Minutes'] = _from_minute
 
 def _to_minute(intermediate):
-    return (intermediate / 60.0, 's')
+    return (intermediate / 60.0, 'm')
 ENCODERS['M'] = _to_minute
 ENCODERS['Minute'] = _to_minute
 ENCODERS['Minutes'] = _to_minute

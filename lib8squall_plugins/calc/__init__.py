@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from . import calc
 
-HELP_SUMMARY = "`!calc help` to learn how I can crunch numbers for you."
+def get_help_summary(client, message):
+    return ("`!calc help` to learn how I can crunch numbers for you.",)
 
 def _try_int(value):
     try:

@@ -102,3 +102,16 @@ def get_timezone(identifier):
     tzmapping = _TIMEZONE_MAPPING.get(identifier) or _TimezoneMapping(identifier, None)
     return (pytz.timezone(tzmapping.canonical_identifier), tzmapping.expected_identifier)
     
+def format_timestamp(timestamp):
+    if timestamp.hour <= 12:
+        value = timestamp.strftime("%H:%M %Z (UTC%z)")
+    else:
+        subvalue = timestamp.strftime("%I:%M%P")
+        if subvalue[0] == '0':
+            subvalue = subvalue[1:]
+        value = timestamp.strftime("%H:%M ({}) %Z (UTC%z)".format(subvalue))
+        
+    if value[0] == '0':
+        return value[1:]
+    return value
+    

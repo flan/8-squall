@@ -4,9 +4,10 @@ import re
 from . import currencies
 from . import rates
 
-HELP_SUMMARY = "`!curr [quantity] <symbol> [to|from] <symbol>` for currency conversion."
+def get_help_summary(client, message):
+    return ("`!curr [quantity] <symbol> [to] <symbol>` for currency conversion.",)
 
-_QUERY_RE = re.compile(r'(?P<qty>\d*\.?\d*)?\s*(?P<cur1>[a-zA-Z]{3})\s+(?:(?P<dir>to|from)\s+)?(?P<cur2>[a-zA-Z]{3})')
+_QUERY_RE = re.compile(r'(?P<qty>\d*\.?\d*)?\s*(?P<cur1>[a-zA-Z]{3})\s+(?:to\s+)?(?P<cur2>[a-zA-Z]{3})')
 
 async def handle_message(client, message):
     if message.content.startswith('!curr '):
@@ -27,11 +28,8 @@ async def handle_message(client, message):
             else:
                 quantity = float(quantity)
                 
-            if query_match.group('dir') == 'from':
-                current_rate = rates.get_rates(cur2)[cur1]
-            else: #assume 'to'
-                current_rate = rates.get_rates(cur1)[cur2]
-            await message.reply("{}{:.2f} {} = {}{:.2f} {}.".format(
+            current_rate = rates.get_rates(cur1)[cur2]
+            await message.reply("{}{:.2f} {} = {}{:.2f} {}".format(
                 cur1.symbol, quantity, cur1.code,
                 cur2.symbol, quantity * current_rate, cur2.code,
             ))

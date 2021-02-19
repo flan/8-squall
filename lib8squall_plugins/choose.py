@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import random
 
-HELP_SUMMARY = "`!choose <choices delimited by commas, semicolons, or linebreaks>` to have one picked"
+def get_help_summary(client, message):
+    return ("`!choose <choices delimited by commas, semicolons, or linebreaks>` to have one picked",)
 
 async def handle_message(client, message):
     if message.content.startswith(('!choose ', '!choose\n')):

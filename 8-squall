@@ -36,36 +36,40 @@ class Magic8Squall(discord.Client):
                 return
                 
             #Someone else was @ed, which may be a "here's how you do this"; don't try to parse it
-            if client.user not in message.mentions:
+            if self.user not in message.mentions:
                 return
                 
         try:
             for plugin in _PLUGINS:
-                if message.channel.id in plugin.disallowed_channels:
-                    continue
-                if message.channel.guild.id in plugin.disallowed_servers:
-                    if message.channel.id not in plugin.allowed_channels:
+                if message.channel.type == discord.ChannelType.text:
+                    if message.channel.id in plugin.disallowed_channels:
                         continue
-                        
+                    if message.channel.guild.id in plugin.disallowed_servers:
+                        if message.channel.id not in plugin.allowed_channels:
+                            continue
+                            
                 if await plugin.module.handle_message(self, message):
                     break #message was handled
             else:
-                if client.user in message.mentions:
+                if self.user in message.mentions:
                     help_summaries = []
                     for plugin in _PLUGINS:
-                        if message.channel.id in plugin.disallowed_channels:
-                            continue
-                        if message.channel.guild.id in plugin.disallowed_servers:
-                            if message.channel.id not in plugin.allowed_channels:
+                        if message.channel.type == discord.ChannelType.text:
+                            if message.channel.id in plugin.disallowed_channels:
                                 continue
-                                
-                        help_summaries.append(plugin.module.HELP_SUMMARY.strip())
+                            if message.channel.guild.id in plugin.disallowed_servers:
+                                if message.channel.id not in plugin.allowed_channels:
+                                    continue
+                        help_summaries.extend(plugin.module.get_help_summary(self, message))
                         
                     if help_summaries:
-                        await message.channel.send(
-                            content="\n\n".join(help_summaries),
-                            delete_after=(4.0 * len(help_summaries)),
-                        )
+                        if message.channel.type == discord.ChannelType.text:
+                            await message.channel.send(
+                                content="\n\n".join(help_summaries),
+                                delete_after=(4.0 * len(help_summaries)),
+                            )
+                        else:
+                            await message.channel.send("\n\n".join(help_summaries))
         except Exception:
             traceback.print_exc()
             
