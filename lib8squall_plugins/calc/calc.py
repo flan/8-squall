@@ -143,7 +143,7 @@ def _generateBuiltinFunctions():
             return 1
         elif args[0] > 100:
             raise ThresholdError("Value passed to fact() (%i) is too large. Use 100 or less." % args[0])
-        return functools.reduce(lambda x, y:x*y, xrange(1, args[0] + 1))
+        return functools.reduce(lambda x, y:x*y, range(1, args[0] + 1))
     functions[(1, 'fact')] = _fact
     
     def _floor(args):

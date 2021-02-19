@@ -29,7 +29,7 @@ async def handle_message(client, message):
                 quantity = float(quantity)
                 
             current_rate = rates.get_rates(cur1)[cur2]
-            await message.reply("{}{:.2f} {} = {}{:.2f} {}".format(
+            await message.reply("{}{:,.2f} {} = {}{:,.2f} {}".format(
                 cur1.symbol, quantity, cur1.code,
                 cur2.symbol, quantity * current_rate, cur2.code,
             ))

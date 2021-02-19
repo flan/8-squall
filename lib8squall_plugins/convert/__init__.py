@@ -57,7 +57,7 @@ async def handle_message(client, message):
                 result = _process(module, quantity, unit1, unit2)
                 if result:
                     (result, normalised_unit1, normalised_unit2) = result
-                    await message.reply("{:.2f}{} = {:.2f}{}".format(
+                    await message.reply("{:,.2f}{} = {:,.2f}{}".format(
                         quantity, normalised_unit1,
                         result, normalised_unit2,
                     ))

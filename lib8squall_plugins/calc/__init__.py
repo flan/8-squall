@@ -8,10 +8,10 @@ def _try_int(value):
     try:
         int_value = int(value)
         if int_value == value:
-            return int_value
+            return "{:,}".format(int_value)
     except Exception:
         pass
-    return value
+    return "{:,.10f}".format(value).rstrip('0')
 
 async def handle_message(client, message):
     if message.content.startswith(('!calc ', '!calc\n')):
