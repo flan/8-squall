@@ -17,6 +17,6 @@ async def handle_message(client, message):
             else:
                 await message.reply(tzlist.handle_timezone_list(tz.strip() for tz in request.split()))
         except pytz.exceptions.UnknownTimeZoneError as e:
-            await message.reply("Unsupported timezone: {}".format(e))
+            await message.reply("Unsupported timezone: `{}`".format(e))
         return True
     return False
