@@ -14,3 +14,5 @@
 #should there be a per-user learning flag on a per-server basis? Probably.
 
 #DMs have a shared instance of their own
+#or maybe it shouldn't process anything in DMs, since keeping everything public is less-likely to
+#allow it to learn toxic expressions

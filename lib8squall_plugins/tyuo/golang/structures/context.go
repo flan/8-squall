@@ -1,0 +1,3 @@
+
+
+//context interacts with memory
