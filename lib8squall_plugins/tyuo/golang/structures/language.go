@@ -1,82 +1,104 @@
 package structures
 import (
     "strings"
+    "sync"
 )
 
 //language handles traits and patterns specific to English, the only language tyuo is intended to
 //support
 
 
-//when learning a word not in the established English dictionary, keep track of how often it
+//when learning a word, keep track of how often it
 //gets capitalised versus not when in the middle of a sentence
-//if one of the capitalisedForms occurs more than 10% of the time, use that when displaying it.
+//if the caseInsensitive form makes up less than 90% of occurrences,
+//display whichever capitalised form has the highest rate
 
-type voidWord struct{}
-const referenceVoidWord voidWord
-var dictionary = make(map[string]voidWord)
-
-type nonNativeWord struct {
-    caseInsensitiveOccurrences uint
-    capitalisedForms map[string]uint
+type word struct {
+    markovIdentifier int
+    caseInsensitiveOccurrences int
+    caseInsensitiveRepresentation string
+    capitalisedForms map[string]int
 }
-var nonNativeDictionary = make(map[string]*nonNativeWord)
+var dictionary = make(map[string]*word)
+var markovDictionary = make(map[int]*word)
+const sentenceBoundary int = -2147483648
+var lastMarkovIdentifier int = -2147483647
+const dictionaryLock sync.Mutex
 
-func init() {
-    //load native dictionary from a file that's just a list of words
-    
-    //load non-native dictionary from memory
-    //it's okay for all the contexts to share the same non-native structures
-}
-
-//only called when the given word isn't the first in the input sequence or after
-//punctuation that implies it should be capitalised
-func updateDictionary(token string) {
-    lcaseToken := strings.ToLower(token)
-    if _, defined := dictionary[lcaseToken]; !defined { //it's a non-native word
-        nnWord, defined := nonNativeDictionary[lcaseToken]
-        if !defined {
-            nnWord = &nonNativeWord{
-                caseInsensitiveOccurrences: 0,
-                capitalisedForms: make(map[string]uint),
-            }
-            nonNativeDictionary[lcaseToken] = nnWord
-        }
-        
-        if lcaseToken == token {
-            nnWord.caseInsensitiveOccurrences += 1
-        } else {
-            instances, defined := nnWord.capitalisedForms[token]
-            if !defined {
-                instances = 1
-            } else {
-                instances += 1
-            }
-            nnWord.capitalisedForms[token] = instances
-        }
-        
-        //prevent these counts from ever becoming large enough to overflow
-        rescaleNeeded := nnWord.caseInsensitiveOccurrences >= 65535
-        if not rescaleNeeded {
-            for _, occurrences := range nnWord.capitalisedForms {
-                if occurrences >= 65535 {
-                    rescaleNeeded = true
-                    break
-                }
-            }
-        }
-        if rescaleNeeded {
-            nnWord.caseInsensitiveOccurrences /= 10
-            for t, occurrences := range nnWord.capitalisedForms {
-                nnWord.capitalisedForms[t] /= 10
-            }
-        }
-        
-        //update memory for persistence
-        //this operation needs to be threadsafe, but it doesn't matter if it
-        //races, since it'll still be close enough, ratio-wise
-        //TODO: go memoryUpdateNonNativeDictionary(lcaseToken, nnWord)
+func loadWord(w *word) {
+    dictionary[w.caseInsensitiveRepresentation] = w
+    markovDictionary[w.markovIdentifier] = w
+    if w.markovIdentifier > lastMarkovIdentifier {
+        lastMarkovIdentifier = w.markovIdentifier
     }
 }
+
+func init() {
+    //load dictionary from memory: for word in range <memory.getWords()> {loadWord(word)}
+    //it's okay for all the contexts to share the same dictionary structures
+}
+
+func getWord(token string) (*word) {
+    lcaseToken := strings.ToLower(token)
+    
+    dictionaryLock.Lock()
+    
+    w, defined := dictionary[lcaseToken]
+    if !defined {
+        lastMarkovIdentifier += 1
+        w = &word{
+            markovIdentifier: lastMarkovIdentifier,
+            caseInsensitiveOccurrences: 0,
+            caseInsensitiveRepresentation: lcaseToken,
+            capitalisedForms: make(map[string]int),
+        }
+        dictionary[lcaseToken] = w
+    }
+    
+    if lcaseToken == token {
+        w.caseInsensitiveOccurrences += 1
+    } else {
+        instances, defined := w.capitalisedForms[token]
+        if !defined {
+            instances = 1
+        } else {
+            instances += 1
+        }
+        w.capitalisedForms[token] = instances
+    }
+    
+    //prevent these counts from ever becoming large enough to overflow
+    rescaleNeeded := w.caseInsensitiveOccurrences >= 32760
+    if not rescaleNeeded {
+        for _, occurrences := range w.capitalisedForms {
+            if occurrences >= 32760 {
+                rescaleNeeded = true
+                break
+            }
+        }
+    }
+    if rescaleNeeded {
+        w.caseInsensitiveOccurrences /= 10
+        for t, occurrences := range w.capitalisedForms {
+            occurrences /= 10
+            if occurrences == 0 {
+                delete(w.capitalisedForms, t)
+            } else {
+                w.capitalisedForms[t] = occurrences
+            }
+        }
+    }
+    
+    lastMarkovIdentifier.Unlock()
+    
+    //update memory for persistence
+    //this operation needs to be threadsafe, but it doesn't matter if it
+    //races, since it'll still be close enough, ratio-wise
+    //TODO: go memoryUpdateNonNativeDictionary(lcaseToken, nnWord)
+    
+    return w
+}
+
 
 
 const minimumLearnableLength = 4 //the minimum number of consecutive
