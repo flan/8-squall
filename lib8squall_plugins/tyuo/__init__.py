@@ -16,3 +16,11 @@
 #DMs have a shared instance of their own
 #or maybe it shouldn't process anything in DMs, since keeping everything public is less-likely to
 #allow it to learn toxic expressions
+
+#Actually, each *channel* will have its own personality instance
+#Multiple channels can be merged into a named group, through use of a map-file,
+#but by default, each one will be standalone, to prevent bleed across topic domains
+#and protect privacy
+
+#opt-in/out will be universal on a per-user basis, since their fragments won't be
+#able to propagate too far from where they were said, wherever that may have been
