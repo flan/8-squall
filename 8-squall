@@ -54,7 +54,7 @@ class Magic8Squall(discord.Client):
                 if await plugin.module.handle_message(self, message):
                     break #message was handled
             else:
-                if self.user in message.mentions and message.strip() == self.__user_notifaction_token:
+                if self.user in message.mentions and message.content.strip() == self.__user_notifaction_token:
                     help_summaries = []
                     for plugin in _PLUGINS:
                         if message.channel.type == discord.ChannelType.text:
