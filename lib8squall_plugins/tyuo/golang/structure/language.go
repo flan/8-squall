@@ -53,3 +53,11 @@ func ParseInput(input string) ([]string, bool) {
  * interesting keyword, which also happens to be the noun) and order what's left over by
  * sorting against dw.occurrenceSum(). Also omit punctuation marks.
  */
+
+//it'll be necessary to deal with emoticons, and to filter out things like emoji and markup
+//How does something like ":D" become a single token instead of becoming ":" and "D"? And ";_;".
+//The lexer will probably need to check each whitespace-delimited token to see if it's an
+//emoticon before breaking it down as punctuation.
+//And it'll probably be prudent to make any input that contains a token that isn't recognised as
+//a special case, but contains any punctuation that isn't in an expected location, ineligible for
+//learning

@@ -177,3 +177,9 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
         return err
     }
 }
+
+//TODO: consider changing the "child" structure, in-database, to be a JSON block, like
+//the dictionary, though this one will need to be an array of tuples, since it's a pair of ints
+//NOTE: this seems like a pretty good idea, and all lookups start by querying the parent object
+//by its ID
+
