@@ -182,4 +182,5 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
 //the dictionary, though this one will need to be an array of tuples, since it's a pair of ints
 //NOTE: this seems like a pretty good idea, and all lookups start by querying the parent object
 //by its ID
-
+//The only thing that complicates it is in how forgetting will work: every single row in the
+//database will need to be unpacked and analysed.

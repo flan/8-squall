@@ -21,8 +21,11 @@ _PLUGINS = tuple(_PluginSpec(
 ) for plugin_spec in json.load(open('./plugin-specs.json')))
 
 class Magic8Squall(discord.Client):
+    __user_notifaction_token = None
+    
     async def on_ready(self):
         print('Logged on as {}'.format(self.user))
+        self.__user_notifaction_token = '<@!{}>'.format(self.user.id)
 
     #https://discordpy.readthedocs.io/en/latest/api.html#message
     async def on_message(self, message):
@@ -51,7 +54,7 @@ class Magic8Squall(discord.Client):
                 if await plugin.module.handle_message(self, message):
                     break #message was handled
             else:
-                if self.user in message.mentions:
+                if self.user in message.mentions and message.strip() == self.__user_notifaction_token:
                     help_summaries = []
                     for plugin in _PLUGINS:
                         if message.channel.type == discord.ChannelType.text:
