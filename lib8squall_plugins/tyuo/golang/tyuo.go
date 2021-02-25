@@ -33,7 +33,7 @@ import (
     "input": [<string>],
  }
  {
-    "action": "forget",
+    "action": "ban",
     "tokens": [<token>],
  }
 */

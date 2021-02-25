@@ -75,6 +75,10 @@ func prepareMemory(contextId string) (*memory, error) {
     
     var database *sql.DB
     if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+        //TODO: don't automatically create a new memory
+        //instead, have an action be required to create new memory
+        //and this will just return an error
+        
         if database, err = initialiseMemory(dbPath); err != nil {
             return nil, err
         }

@@ -36,9 +36,9 @@ func (dw *dictionaryWord) updateRepresentation(token string) {
         }
     }
     if rescaleNeeded {
-        dw.caseInsensitiveOccurrences /= 10
+        dw.caseInsensitiveOccurrences /= rescaleDecimator
         for t, occurrences := range dw.capitalisedForms {
-            occurrences /= 10
+            occurrences /= rescaleDecimator
             if occurrences == 0 {
                 delete(dw.capitalisedForms, t)
             } else {

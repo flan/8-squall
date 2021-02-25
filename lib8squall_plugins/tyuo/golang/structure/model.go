@@ -157,7 +157,7 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
                     var childDictionaryId, count int
                     for rows.Next() {
                         rows.Scan(&childDictionaryId, &count)
-                        count /= 10
+                        count /= rescaleDecimator
                         if count > 0 {
                             if _, err = updateStmt.Exec(count, parentDictionaryId, childDictionaryId); err != nil {
                                 return err
@@ -184,3 +184,9 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
 //by its ID
 //The only thing that complicates it is in how forgetting will work: every single row in the
 //database will need to be unpacked and analysed.
+//...Unless this gets implemented as a banlist in the database, as a tuple of case-insensitive
+//string and, if defined, dictionary ID, maybe loaded in its entireity when the memory is prepared,
+//and if any of the transitions from this token are in that list, they just get deleted when it's
+//written back to disk.
+
+//when banning words, use a "startswith" check

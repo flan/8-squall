@@ -61,3 +61,20 @@ func ParseInput(input string) ([]string, bool) {
 //And it'll probably be prudent to make any input that contains a token that isn't recognised as
 //a special case, but contains any punctuation that isn't in an expected location, ineligible for
 //learning
+
+
+//punctuation should be part of the token to which it is most directly related, to make it easier
+//to consistently traverse the structure as a bigram relationship
+//This means some bloat in the dictionary, but probably better output
+
+
+//To gradually filter out typos and bad structures, timestamp every word in the dictionary
+//and every child-path in each transition
+//When loading a transition, don't include any expired branches to prevent them from being
+//selectable, and they'll be dropped when eventually flushed back to disk
+//If no transitions remain, the entire node can be dropped, but the clutter caused by having
+//orphans should be pretty inconsequential
+
+//When a dictionary word becomes too old, does anything happen?
+//Does it make sense to timestamp dictionary words at all, given that they're only referenced by
+//transitions?
