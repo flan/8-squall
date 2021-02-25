@@ -8,14 +8,14 @@ import (
 )
 
 
-type modelNode struct {
+type markovNode struct {
     DictionaryId int
     Children map[int]int
     
     childrenSum int64
     childrenSumInitialised bool
 }
-func (mn *modelNode) ChildrenSum() (int64) {
+func (mn *markovNode) ChildrenSum() (int64) {
     if mn.childrenSumInitialised {
         return mn.childrenSum
     }
@@ -29,7 +29,7 @@ func (mn *modelNode) ChildrenSum() (int64) {
     mn.childrenSumInitialised = true
     return sum
 }
-func (mn *modelNode) ChooseUniformRandom() (int, error) {
+func (mn *markovNode) ChooseUniformRandom() (int, error) {
     //select
     
     //this is a weighted random selection of all possible transition nodes
@@ -42,7 +42,7 @@ func (mn *modelNode) ChooseUniformRandom() (int, error) {
     }
     return 0, errors.New(fmt.Sprintf("no children available for selection from %d", mn.DictionaryId))
 }
-func (mn *modelNode) Frequency(dictionaryId int) (float64, error) {
+func (mn *markovNode) Frequency(dictionaryId int) (float64, error) {
     if count, defined := mn.Children[dictionaryId]; defined {
         if count == 0 {
             return 0.0, errors.New(fmt.Sprintf("no transitions observed from %d to %d", mn.DictionaryId, dictionaryId))
@@ -53,7 +53,7 @@ func (mn *modelNode) Frequency(dictionaryId int) (float64, error) {
         return 0.0, errors.New(fmt.Sprintf("child %d is not defined in %d", mn.DictionaryId, dictionaryId))
     }
 }
-func (mn *modelNode) Surprise(dictionaryId int) (float64, error) {
+func (mn *markovNode) Surprise(dictionaryId int) (float64, error) {
     if frequency, err := mn.Frequency(dictionaryId); err == nil {
         return -math.Log2(float64(count) / float64(mn.ChildrenSum())), nil
     } else {
@@ -74,10 +74,10 @@ func prepareModel(database *sql.DB, tableName string) (*model, error) {
         tableName: string,
     }, nil
 }
-func (m *model) GetModelNodes(dictionaryIds []int) ([]modelNode, error) {
+func (m *model) GetMarkovNodes(dictionaryIds []int) ([]markovNode, error) {
     //find_context
     
-    output := make([]modelNode, len(dictionaryIds))
+    output := make([]markovNode, len(dictionaryIds))
     
     var queryStmt := m.db.Prepare(fmt.Sprintf("SELECT childrenJSONZLIB FROM statistics_%s WHERE dictionaryId = ?", m.tableName))
     defer queryStmt.Close()
@@ -93,7 +93,7 @@ func (m *model) GetModelNodes(dictionaryIds []int) ([]modelNode, error) {
             
             //TODO: unpack and filter children
             
-            output[i] = modelNode{
+            output[i] = markovNode{
                 DictionaryId: dictionaryId,
                 Children: children,
                 
