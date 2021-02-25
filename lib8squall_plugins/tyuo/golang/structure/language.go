@@ -69,7 +69,7 @@ func ParseInput(input string) ([]string, bool) {
 
 
 //To gradually filter out typos and bad structures, timestamp every word in the dictionary
-//and every child-path in each transition
+//and every child-path in each transition (granularity can be one second)
 //When loading a transition, don't include any expired branches to prevent them from being
 //selectable, and they'll be dropped when eventually flushed back to disk
 //If no transitions remain, the entire node can be dropped, but the clutter caused by having

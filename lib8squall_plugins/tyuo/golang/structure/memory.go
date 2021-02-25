@@ -21,6 +21,12 @@ type memory struct {
     Dictionary *dictionary
     ModelForward *model
     ModelReverse *model
+    
+    //tokens without a dictionary mapping share the sentence-terminator value
+    //TODO: implement this
+    bannedTokens map[string]int
+    //TODO: there also needs to be a set of banned ints; maybe there should be a
+    //"banned" struct that includes both
 }
 func (m *memory) Close() {
     m.db.Close()

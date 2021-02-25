@@ -71,11 +71,11 @@ func (dw *dictionaryWord) represent() (string, bool) {
 }
 
 type dictionary struct {
-    db *sql.DB
+    memory *memory
     
     lastMarkovIdentifier int
 }
-func prepareDictionary(database *sql.DB) (*dictionary, error) {
+func prepareDictionary(memory *memory) (*dictionary, error) {
     var lastMarkovIdentifier int
     if rows, err := database.Query("SELECT MAX(id) FROM dictionary"); err == nil {
         var maxId sql.NullInt32
@@ -92,7 +92,7 @@ func prepareDictionary(database *sql.DB) (*dictionary, error) {
     }
     
     return &dictionary{
-        db: database,
+        memory: memory,
         
         lastMarkovIdentifier: lastMarkovIdentifier,
     }, nil
@@ -115,4 +115,6 @@ func (d *dictionary) upsertWords(dws []dictionaryWord) (error) {
     
     //needs to serialise capitalisedForms as JSON if len() > 0; values need to be
     //coerced to map[string]int, though, for space reasons
+    //Golang's Marshal() uses compact representations by default
+    //data stored in the database is further compressed using zlib
 }

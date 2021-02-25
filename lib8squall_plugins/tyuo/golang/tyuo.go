@@ -20,20 +20,27 @@ import (
 //use JSON to handle interactions
 /*
  {
-    "action": "setContext",
+    "action": "createContext",
+    "context": <ID as string>,
+ }
+ {
+    "action": "dropContext",
     "context": <ID as string>,
  }
  {
     "action": "query",
+    "context": <ID as string>,
     "input": [<string>],
     "learn": <bool>,
  }
  {
     "action": "learn",
+    "context": <ID as string>,
     "input": [<string>],
  }
  {
     "action": "ban",
+    "context": <ID as string>,
     "tokens": [<token>],
  }
 */
@@ -53,10 +60,12 @@ func main() {
     shutdownChannel<- true
 }
 
-//each context needs to be threadsafe, retrieved with structures.GetContext(id),
-//which might build a new one if the given ID doesn't already exist
+//on-boot, don't connect to any contexts, but when a context is accessed,
+//hold on to the connection indefinitely
 
-//when a context is set, let the caller have exclusive access to it until that
-//TCP session ends
-//note: set a very brief TCP timeout
+//each context needs to be threadsafe, which can be accomplished by having
+//structures.GetContext(contextId)'s returned object exposes an RWLock, with
+//the "query" path being a reader and everything else being a writer
 
+//if a context gets dropped while there are still clients waiting to access it,
+//just let the memory-access steps raise errors
