@@ -34,27 +34,27 @@ func (mn *modelNode) ChooseUniformRandom() (int, error) {
     
     //this is a weighted random selection of all possible transition nodes
     target := rng.Int63n(mn.childrenSum())
-    for childDictionaryId, count := range mn.Children {
+    for dictionaryId, count := range mn.Children {
         if target <= 0 {
-            return childDictionaryId, nil
+            return dictionaryId, nil
         }
         target -= count
     }
     return 0, errors.New(fmt.Sprintf("no children available for selection from %d", mn.DictionaryId))
 }
-func (mn *modelNode) Frequency(childDictionaryId int) (float64, error) {
-    if count, defined := mn.Children[childDictionaryId]; defined {
+func (mn *modelNode) Frequency(dictionaryId int) (float64, error) {
+    if count, defined := mn.Children[dictionaryId]; defined {
         if count == 0 {
-            return 0.0, errors.New(fmt.Sprintf("no transitions observed from %d to %d", mn.DictionaryId, childDictionaryId))
+            return 0.0, errors.New(fmt.Sprintf("no transitions observed from %d to %d", mn.DictionaryId, dictionaryId))
         }
         
         return float64(count) / float64(mn.ChildrenSum()), nil
     } else {
-        return 0.0, errors.New(fmt.Sprintf("child %d is not defined in %d", mn.DictionaryId, childDictionaryId))
+        return 0.0, errors.New(fmt.Sprintf("child %d is not defined in %d", mn.DictionaryId, dictionaryId))
     }
 }
-func (mn *modelNode) Surprise(childDictionaryId int) (float64, error) {
-    if frequency, err := mn.Frequency(childDictionaryId); err == nil {
+func (mn *modelNode) Surprise(dictionaryId int) (float64, error) {
+    if frequency, err := mn.Frequency(dictionaryId); err == nil {
         return -math.Log2(float64(count) / float64(mn.ChildrenSum())), nil
     } else {
         return 0.0, err
@@ -74,26 +74,27 @@ func prepareModel(database *sql.DB, tableName string) (*model, error) {
         tableName: string,
     }, nil
 }
-func (m *model) GetModelNodes(parentDictionaryIds []int) ([]modelNode, error) {
+func (m *model) GetModelNodes(dictionaryIds []int) ([]modelNode, error) {
     //find_context
     
-    output := make([]modelNode, len(parentDictionaryIds))
+    output := make([]modelNode, len(dictionaryIds))
     
-    var queryStmt := m.db.Prepare(fmt.Sprintf("SELECT childDictionaryId, count FROM statistics_%s WHERE parentDictionaryId = ?", m.tableName))
+    var queryStmt := m.db.Prepare(fmt.Sprintf("SELECT childrenJSONZLIB FROM statistics_%s WHERE dictionaryId = ?", m.tableName))
     defer queryStmt.Close()
     
-    for i, parentDictionaryId := range parentDictionaryIds {
-        if rows, err := queryStmt.Query(parentDictionaryId); err == nil {
+    for i, dictionaryId := range dictionaryIds {
+        if rows, err := queryStmt.Query(dictionaryId); err == nil {
             children := make(map[int]int)
             
-            var childDictionaryId, count int
+            var children []byte
             for rows.Next() {
-                rows.Scan(&childDictionaryId, &count)
-                children[childDictionaryId] = count
+                rows.Scan(&children)
             }
             
+            //TODO: unpack and filter children
+            
             output[i] = modelNode{
-                DictionaryId: parentDictionaryId,
+                DictionaryId: dictionaryId,
                 Children: children,
                 
                 childrenSum: 0,
@@ -105,29 +106,32 @@ func (m *model) GetModelNodes(parentDictionaryIds []int) ([]modelNode, error) {
     }
     return output, nil
 }
-func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int) (error) {
+func (m *model) UptickNodes(dictionaryIds []int, childDictionaryIds []int) (error) {
     //observe
     //This is a simple parallel arrays model.
     
+    //TODO: rewrite this around the JSON idea
+    //which probably means it's an INSERT ON CONFLICT UPDATE situation
+    
     var ctx context.Context
     if tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable}); err == nil {
-        var queryStmt := tx.Prepare(fmt.Sprintf("SELECT count FROM statistics_%s WHERE parentDictionaryId = ? AND childDictionaryId = ?", m.tableName))
+        var queryStmt := tx.Prepare(fmt.Sprintf("SELECT count FROM statistics_%s WHERE dictionaryId = ? AND childDictionaryId = ?", m.tableName))
         defer queryStmt.Close()
         
-        var updateStmt := tx.Prepare(fmt.Sprintf("UPDATE statistics_%s SET count = ? WHERE parentDictionaryId = ? AND childDictionaryId = ?", m.tableName))
+        var updateStmt := tx.Prepare(fmt.Sprintf("UPDATE statistics_%s SET count = ? WHERE dictionaryId = ? AND childDictionaryId = ?", m.tableName))
         defer updateStmt.Close()
         
-        var insertStmt := tx.Prepare(fmt.Sprintf("INSERT INTO statistics_%s (parentDictionaryId, childDictionaryId, count) values (?, ?, 1)", m.tableName))
+        var insertStmt := tx.Prepare(fmt.Sprintf("INSERT INTO statistics_%s (dictionaryId, childDictionaryId, count) values (?, ?, 1)", m.tableName))
         defer insertStmt.Close()
         
-        var deleteStmt := tx.Prepare(fmt.Sprintf("DELETE FROM statistics_%s WHERE parentDictionaryId = ? AND childDictionaryId = ?", m.tableName))
+        var deleteStmt := tx.Prepare(fmt.Sprintf("DELETE FROM statistics_%s WHERE dictionaryId = ? AND childDictionaryId = ?", m.tableName))
         defer deleteStmt.Close()
         
         rescaleNeeded := make(map[int]bool)
-        for i, parentDictionaryId := range parentDictionaryIds {
+        for i, dictionaryId := range dictionaryIds {
             childDictionaryId := childDictionaryIds[i]
             
-            if rows, err := queryStmt.Query(parentDictionaryId, childDictionaryId); err == nil {
+            if rows, err := queryStmt.Query(dictionaryId, childDictionaryId); err == nil {
                 var count sql.NullInt32
                 for rows.Next() {
                     rows.Scan(&count)
@@ -135,13 +139,13 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
                 if count.Valid {
                     newCount := count.Int32 + 1
                     if newCount > rescaleThreshold {
-                        rescaleNeeded[parentDictionaryId] = true
+                        rescaleNeeded[dictionaryId] = true
                     }
-                    if _, err = updateStmt.Exec(newCount, parentDictionaryId, childDictionaryId); err != nil {
+                    if _, err = updateStmt.Exec(newCount, dictionaryId, childDictionaryId); err != nil {
                         return err
                     }
                 } else {
-                    if _, err = insertStmt.Exec(parentDictionaryId, childDictionaryId); err != nil {
+                    if _, err = insertStmt.Exec(dictionaryId, childDictionaryId); err != nil {
                         return err
                     }
                 }
@@ -151,21 +155,21 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
         }
         
         if len(rescaleNeeded) > 0 {
-            var rescaleQueryStmt := tx.Prepare(fmt.Sprintf("SELECT childDictionaryId, count FROM statistics_%s WHERE parentDictionaryId = ?", m.tableName))
+            var rescaleQueryStmt := tx.Prepare(fmt.Sprintf("SELECT childDictionaryId, count FROM statistics_%s WHERE dictionaryId = ?", m.tableName))
             defer rescaleQueryStmt.Close()
             
-            for parentDictionaryId, _ := range rescaleNeeded {
-                if rows, err := rescaleQueryStmt.Query(parentDictionaryId); err == nil {
+            for dictionaryId, _ := range rescaleNeeded {
+                if rows, err := rescaleQueryStmt.Query(dictionaryId); err == nil {
                     var childDictionaryId, count int
                     for rows.Next() {
                         rows.Scan(&childDictionaryId, &count)
                         count /= rescaleDecimator
                         if count > 0 {
-                            if _, err = updateStmt.Exec(count, parentDictionaryId, childDictionaryId); err != nil {
+                            if _, err = updateStmt.Exec(count, dictionaryId, childDictionaryId); err != nil {
                                 return err
                             }
                         } else {
-                            if _, err = deleteStmt.Exec(parentDictionaryId, childDictionaryId); err != nil {
+                            if _, err = deleteStmt.Exec(dictionaryId, childDictionaryId); err != nil {
                                 return err
                             }
                         }

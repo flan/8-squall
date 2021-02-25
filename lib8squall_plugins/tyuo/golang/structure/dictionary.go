@@ -234,7 +234,7 @@ func (bd *bannedDictionary) EnumerateBannedTokens() ([]string) {
         bannedTokensSlice[i++] = token
     }
     
-    //sort bannedTokensSlice
+    //TODO: sort bannedTokensSlice
     
     return bannedTokensSlice
 }

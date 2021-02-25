@@ -37,33 +37,27 @@ func initialiseMemory(dbPath string) (*sql.DB, error) {
         id INTEGER NOT NULL PRIMARY KEY,
         caseInsensitiveOccurrences INTEGER NOT NULL,
         caseInsensitiveRepresentation TEXT NOT NULL UNIQUE,
-        capitalisedFormsJSON BLOB
+        capitalisedFormsJSONZLIB BLOB
     )`); err != nil {
         database.Close()
         return nil, err
     }
     
     if _, err := database.Exec(`CREATE TABLE statistics_forward (
-        parentDictionaryId INTEGER NOT NULL,
-        childDictionaryId INTEGER NOT NULL,
-        count INTEGER NOT NULL,
+        dictionaryId INTEGER NOT NULL PRIMARY KEY,
+        childrenJSONZLIB BLOB
         
-        FOREIGN KEY(parentDictionaryId) REFERENCES dictionary(id) ON DELETE CASCADE,
-        FOREIGN KEY(childDictionaryId) REFERENCES dictionary(id) ON DELETE CASCADE,
-        PRIMARY KEY(parentDictionaryId, childDictionaryId)
+        FOREIGN KEY(dictionaryId) REFERENCES dictionary(id) ON DELETE CASCADE,
     )`); err != nil {
         database.Close()
         return nil, err
     }
     
     if _, err := database.Exec(`CREATE TABLE statistics_reverse (
-        parentDictionaryId INTEGER NOT NULL,
-        childDictionaryId INTEGER NOT NULL,
-        count INTEGER NOT NULL,
+        dictionaryId INTEGER NOT NULL PRIMARY KEY,
+        childrenJSONZLIB BLOB
         
-        FOREIGN KEY(parentDictionaryId) REFERENCES dictionary(id) ON DELETE CASCADE,
-        FOREIGN KEY(childDictionaryId) REFERENCES dictionary(id) ON DELETE CASCADE,
-        PRIMARY KEY(parentDictionaryId, childDictionaryId)
+        FOREIGN KEY(dictionaryId) REFERENCES dictionary(id) ON DELETE CASCADE,
     )`); err != nil {
         database.Close()
         return nil, err
