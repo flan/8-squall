@@ -63,13 +63,13 @@ func (mn *modelNode) Surprise(childDictionaryId int) (float64, error) {
 
 
 type model struct {
-    memory *memory
+    db *sql.DB
     
     tableName string
 }
-func prepareModel(memory *memory, tableName string) (*model, error) {
+func prepareModel(database *sql.DB, tableName string) (*model, error) {
     return &model{
-        memory: memory,
+        db: database,
         
         tableName: string,
     }, nil
@@ -79,7 +79,7 @@ func (m *model) GetModelNodes(parentDictionaryIds []int) ([]modelNode, error) {
     
     output := make([]modelNode, len(parentDictionaryIds))
     
-    var queryStmt := m.memory.db.Prepare(fmt.Sprintf("SELECT childDictionaryId, count FROM statistics_%s WHERE parentDictionaryId = ?", m.tableName))
+    var queryStmt := m.db.Prepare(fmt.Sprintf("SELECT childDictionaryId, count FROM statistics_%s WHERE parentDictionaryId = ?", m.tableName))
     defer queryStmt.Close()
     
     for i, parentDictionaryId := range parentDictionaryIds {
@@ -110,7 +110,7 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
     //This is a simple parallel arrays model.
     
     var ctx context.Context
-    if tx, err := m.memory.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable}); err == nil {
+    if tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable}); err == nil {
         var queryStmt := tx.Prepare(fmt.Sprintf("SELECT count FROM statistics_%s WHERE parentDictionaryId = ? AND childDictionaryId = ?", m.tableName))
         defer queryStmt.Close()
         
@@ -186,9 +186,5 @@ func (m *model) UptickNodes(parentDictionaryIds []int, childDictionaryIds []int)
 //by its ID
 //The only thing that complicates it is in how forgetting will work: every single row in the
 //database will need to be unpacked and analysed.
-//...Unless this gets implemented as a banlist in the database, as a tuple of case-insensitive
-//string and, if defined, dictionary ID, maybe loaded in its entireity when the memory is prepared,
-//and if any of the transitions from this token are in that list, they just get deleted when it's
-//written back to disk.
-
-//when banning words, use a "startswith" check
+//see bannedDictionary; when parsing transition targets, if the ID is banned, delete it from
+//the list, like an outdated timestamp entry

@@ -19,17 +19,9 @@ type memory struct {
     db *sql.DB
     
     Dictionary *dictionary
+    BannedDictionary *bannedDictionary
     ModelForward *model
     ModelReverse *model
-    
-    //tokens without a dictionary mapping share the sentence-terminator value
-    //TODO: implement this
-    bannedTokens map[string]int
-    //TODO: there also needs to be a set of banned ints; maybe there should be a
-    //"banned" struct that includes both
-    //When loading banned values, load from the database first to capture
-    //IDs, then from the banned-words file, only adding new entries without
-    //an ID when there's no matching token already
 }
 func (m *memory) Close() {
     m.db.Close()
@@ -102,13 +94,18 @@ func prepareMemory(contextId string) (*memory, error) {
         database.Close()
         return nil, err
     }
-    
-    modForward, err := prepareModel(database, "forward")
+    bannedDict, err := prepareBannedDictionary(database, dict)
     if err != nil {
         database.Close()
         return nil, err
     }
-    modReverse, err := prepareModel(database, "reverse")
+    
+    modForward, err := prepareModel(database, bannedDict, "forward")
+    if err != nil {
+        database.Close()
+        return nil, err
+    }
+    modReverse, err := prepareModel(database, bannedDict, "reverse")
     if err != nil {
         database.Close()
         return nil, err
@@ -118,6 +115,7 @@ func prepareMemory(contextId string) (*memory, error) {
         db: database
         
         Dictionary: dict,
+        BannedDictionary: bannedDict,
         ModelForward: modForward,
         ModelReverse: modReverse,
     }, nil

@@ -28,10 +28,10 @@ import (
     "context": <ID as string>,
  }
  {
-    "action": "query",
+    "action": "prompt",
     "context": <ID as string>,
     "input": [<string>],
-    "learn": <bool>,
+    "learn": <bool>, //should this be an option? Maybe just explicitly requiring a second call will be clearer
  }
  {
     "action": "learn",
@@ -39,9 +39,18 @@ import (
     "input": [<string>],
  }
  {
-    "action": "ban",
+    "action": "banTokens",
     "context": <ID as string>,
     "tokens": [<token>],
+ }
+ {
+    "action": "unbanTokens",
+    "context": <ID as string>,
+    "tokens": [<token>],
+ }
+ {
+    "action": "listBannedTokens",
+    "context": <ID as string>,
  }
 */
 
