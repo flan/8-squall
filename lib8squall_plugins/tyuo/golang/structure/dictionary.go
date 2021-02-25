@@ -10,7 +10,7 @@ type dictionaryWord struct {
     id int
     caseInsensitiveOccurrences int
     caseInsensitiveRepresentation string
-    capitalisedForms map[string]float64
+    capitalisedForms map[string]int64
 }
 func (dw *dictionaryWord) updateRepresentation(token string) {
     if token == dw.caseInsensitiveRepresentation {
@@ -18,9 +18,9 @@ func (dw *dictionaryWord) updateRepresentation(token string) {
     } else {
         occurrences, defined := dw.capitalisedForms[token]
         if !defined {
-            occurrences = 1.0
+            occurrences = 1
         } else {
-            occurrences += 1.0
+            occurrences += 1
         }
         dw.capitalisedForms[token] = occurrences
     }
@@ -59,7 +59,7 @@ func (dw *dictionaryWord) represent() (string, bool) {
         return dw.caseInsensitiveRepresentation, true
     } else {
         var mostRepresented string
-        var mostRepresentedCount float64 = 0.0
+        var mostRepresentedCount int64 = 0
         for representation, count := range dw.capitalisedForms {
             if count > mostRepresentedCount {
                 mostRepresentedCount = count
@@ -85,7 +85,7 @@ func prepareDictionary(memory *memory) (*dictionary, error) {
         if maxId.Valid {
             lastMarkovIdentifier = maxId
         } else {
-            lastMarkovIdentifier = -2147483647
+            lastMarkovIdentifier = sentenceBoundary + 1 //the first valid identifier
         }
     } else {
         return nil, err
@@ -104,17 +104,16 @@ func (d *dictionary) getWordsByToken(tokens []string) ([]dictionaryWord, error) 
     //before returning it
     
     
-    //needs to deserialise capitalisedForms from JSON as map[string]float64
+    //needs to deserialise capitalisedForms from JSON as map[string]int64
 }
 func (d *dictionary) getWordsById(ids []int) ([]dictionaryWord, error) {
     //if id isn't in memory, raise an error
     
-    //needs to deserialise capitalisedForms from JSON as map[string]float64
+    //needs to deserialise capitalisedForms from JSON as map[string]int64
 }
 func (d *dictionary) upsertWords(dws []dictionaryWord) (error) {
     
-    //needs to serialise capitalisedForms as JSON if len() > 0; values need to be
-    //coerced to map[string]int, though, for space reasons
+    //needs to serialise capitalisedForms as JSON if len() > 0; null otherwise
     //Golang's Marshal() uses compact representations by default
     //data stored in the database is further compressed using zlib
 }

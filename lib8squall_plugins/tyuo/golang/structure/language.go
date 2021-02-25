@@ -6,8 +6,6 @@ import (
 //language handles traits and patterns specific to English, the only language tyuo is intended to
 //support
 
-const sentenceBoundary int = -2147483648 //used to denote the end of a sentence
-
 
 
 

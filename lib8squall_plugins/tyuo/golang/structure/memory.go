@@ -27,6 +27,9 @@ type memory struct {
     bannedTokens map[string]int
     //TODO: there also needs to be a set of banned ints; maybe there should be a
     //"banned" struct that includes both
+    //When loading banned values, load from the database first to capture
+    //IDs, then from the banned-words file, only adding new entries without
+    //an ID when there's no matching token already
 }
 func (m *memory) Close() {
     m.db.Close()
