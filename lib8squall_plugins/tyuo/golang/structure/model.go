@@ -110,6 +110,14 @@ func (m *model) UptickNodes(dictionaryIds []int, childDictionaryIds []int) (erro
     //observe
     //This is a simple parallel arrays model.
     
+    if len(dictionaryIds) != len(childDictionaryIds) {
+        return errors.New(fmt.Sprintf(
+            "%d dictionaryIds to %d childDictionaryIds: not 1:1",
+            len(dictionaryIds),
+            len(childDictionaryIds),
+        ))
+    }
+    
     //TODO: rewrite this around the JSON idea
     //which probably means it's an INSERT ON CONFLICT UPDATE situation
     
