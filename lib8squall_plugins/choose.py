@@ -2,25 +2,22 @@
 import random
 
 def get_help_summary(client, message):
-    return ("`!choose <choices delimited by commas, semicolons, or linebreaks>` to have one picked",)
+    return ("`!choose <choices delimited by common separators>` to have one picked",)
 
 async def handle_message(client, message):
     if message.content.startswith(('!choose ', '!choose\n')):
-        request = message.content[8:]
+        request = message.content[8:].strip()
         
-        if '\n' in request:
-            choices = request.split('\n')
-        elif ';' in request:
-            choices = request.split(';')
-        elif ',' in request:
-            choices = request.split(',')
+        for delimiter in ('\n', ';', ',', ' '):
+            choices = [i for i in (j.strip() for j in request.split(delimiter)) if i]
+            if len(choices) > 1:
+                break
         else:
             choices = ()
-        choices = [i for i in (j.strip() for j in choices) if i]
-        
-        if len(choices) >= 2:
+            
+        if len(choices) > 1:
             await message.reply(random.choice(choices))
         else:
-            await message.reply("There was nothing to choose between; provide a list separated by commas, semicolons, or linebreaks.")
+            await message.reply("There was nothing to choose between; provide a list separated by spaces, commas, semicolons, or linebreaks.")
         return True
     return False
