@@ -35,7 +35,7 @@ def _get_urbandictionary(phrase):
     for entry in response.json()['list']:
         thumbs_up = entry['thumbs_up']
         thumbs_down = entry['thumbs_down']
-        if thumbs_down == 0 or thumbs_up / float(thumbs_down) >= 1.5:
+        if (thumbs_down == 0 and thumbs_up > 0) or (thumbs_up / float(thumbs_down) >= 1.5):
             definitions.append((thumbs_up, "||{}||".format(entry['definition'].replace('[', '').replace(']', ''))))
     if definitions:
         return {
