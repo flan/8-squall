@@ -36,10 +36,10 @@ def _get_urbandictionary(phrase):
         thumbs_up = entry['thumbs_up']
         thumbs_down = entry['thumbs_down']
         if thumbs_up / float(thumbs_down) >= 1.5:
-            definitions.append(entry['definition'].replace('[', '').replace(']', ''))
+            definitions.append((thumbs_up, entry['definition'].replace('[', '').replace(']', '')))
     if definitions:
         return {
-            "slang": definitions,
+            "slang": [d for (r, d) in sorted(definitions, reverse=True)],
         }
     return None
 _UDICT_PATTERNS = ('!udict ', '!uword ' , '!urbandict ', '!urbandictionary ')
