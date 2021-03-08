@@ -1,90 +1,66 @@
 # -*- coding: utf-8 -*-
-import PyDictionary
+import merriam_webster.api as mw
+import urbandict
+import urllib.error
 
 def get_help_summary(client, message):
     return (
-        "`!dict[ionary] <word> [word...]` to get definitions",
-        "`!syn[onyms] <word> [word...]` to get synonyms",
-        "`!ant[onyms] <word> [word...]` to get antonyms",
+        "`!dict[ionary] <word>` to get a definition; alias: `!word`",
+        "`!urbandict[ionary] <phrase>` to get a definition; alias: `!udict`",
     )
 
-_DICT_PATTERNS = ('!word ', '!words ', '!dict ', '!dictionary ')
-_SYN_PATTERNS = ('!syn ', '!synonyms ')
-_ANT_PATTERNS = ('!ant ', '!antonyms ')
+_MW_API_KEY = open("./m-w.dictionary.key").read().strip()
+def _get_merriam_webster(word):
+    q = mw.CollegiateDictionary(_MW_API_KEY)
+    results = q.lookup(word)
+    return {
+        result.function: [sense.definition for sense in result.senses]
+        for result in results
+    }
+_DICT_PATTERNS = ('!word ', '!dict ', '!dictionary ')
+        
+def _get_urban_dictionary(phrase):
+    results = urbandict.define(phrase)
+    return {
+        "slang": [results[0]['def']],
+    }
+_UDICT_PATTERNS = ('!udict ', '!urbandict ', '!urbandictionary ')
 
-def _dict_format_definition(definitions):
+def _format_response(response):
     output = []
-    for (i, d) in enumerate(definitions[:3]):
-        output.append("> {}) {}".format(i + 1, d))
-    if len(definitions) > 3:
-        output.append("> *additional definitions not shown*")
+    for (kind, definitions) in sorted(response.items()):
+        output.append("*{}*".format(kind))
+        output.extend(
+            "> {}) {}".format(i + 1, definition)
+            for (i, definition) in enumerate(definitions)
+        )
     return output
-    
-def _dict(tokens):
-    d = PyDictionary.PyDictionary()
-    output = []
-    for token in tokens:
-        try:
-            details = d.meaning(token)
-        except Exception:
-            output.append("{}: no definitions found".format(token))
-        else:
-            if details:
-                for (kind, definitions) in sorted(details.items()):
-                    output.append("{} *{}*".format(token, kind))
-                    if definitions:
-                        output.extend(_dict_format_definition(definitions))
-                    else:
-                        output.append("> no definitions found")
-            else:
-                output.append("{}: no definitions found".format(token))
-    return output
-    
-def _syn(tokens):
-    d = PyDictionary.PyDictionary()
-    output = []
-    for token in tokens:
-        try:
-            details = d.synonym(token)
-        except Exception:
-            output.append("{}: no synonyms found".format(token))
-        else:
-            if details:
-                output.append("{}: {}".format(token, ', '.join(details)))
-            else:
-                output.append("{}: no synonyms found".format(token))
-    return output
-    
-def _ant(tokens):
-    d = PyDictionary.PyDictionary()
-    output = []
-    for token in tokens:
-        try:
-            details = d.antonym(token)
-        except Exception:
-            output.append("{}: no antonyms found".format(token))
-        else:
-            if details:
-                output.append("{}: {}".format(token, ', '.join(details)))
-            else:
-                output.append("{}: no antonyms found".format(token))
-    return output
-    
     
 async def handle_message(client, message):
     for (patternset, handler) in (
-        (_DICT_PATTERNS, _dict),
-        (_SYN_PATTERNS, _syn),
-        (_ANT_PATTERNS, _ant),
+        (_DICT_PATTERNS, _get_merriam_webster),
+        (_UDICT_PATTERNS, _get_urban_dictionary),
     ):
         for pattern in patternset:
             if message.content.startswith(pattern):
-                tokens = message.content[len(pattern):].split()
-                if tokens:
-                    response = handler(tokens)
-                    if response:
-                        await message.reply('\n'.join(response))
-                    else:
-                        await message.reply("I wasn't able to find anything useful.")
+                subject = message.content[len(pattern):].strip()
+                if subject:
+                    try:
+                        response = handler(subject)
+                        if response:
+                            await message.reply('\n'.join(_format_response(response)))
+                        else:
+                            await message.reply("No definitions were found.")
+                    except urllib.error.HTTPError as e:
+                        if e.code == 404:
+                            await message.reply("No definitions were found.")
+                        else:
+                            await message.reply("The dictionary-server had a {} problem.".format(e.code))
+                            raise
+                    except mw.WordNotFoundException as e:
+                        await message.reply(str(e))
+                    except Exception:
+                        await message.reply("Something didn't go quite right.")
+                        raise
                 return True
     return False
