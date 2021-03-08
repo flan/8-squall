@@ -36,7 +36,7 @@ def _get_urbandictionary(phrase):
         thumbs_up = entry['thumbs_up']
         thumbs_down = entry['thumbs_down']
         if thumbs_up / float(thumbs_down) >= 1.5:
-            definitions.append((thumbs_up, entry['definition'].replace('[', '').replace(']', '')))
+            definitions.append((thumbs_up, "||{}||".format(entry['definition'].replace('[', '').replace(']', ''))))
     if definitions:
         return {
             "slang": [d for (r, d) in sorted(definitions, reverse=True)],
