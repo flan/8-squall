@@ -8,7 +8,7 @@ def get_help_summary(client, message):
         "`!ant[onyms] <word> [word...]` to get antonyms",
     )
 
-_DICT_PATTERNS = ('!dict ', '!dictionary ')
+_DICT_PATTERNS = ('!word ', '!words ', '!dict ', '!dictionary ')
 _SYN_PATTERNS = ('!syn ', '!synonyms ')
 _ANT_PATTERNS = ('!ant ', '!antonyms ')
 
