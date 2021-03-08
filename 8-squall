@@ -26,6 +26,11 @@ class Magic8Squall(discord.Client):
     async def on_ready(self):
         print('Logged on as {}'.format(self.user))
         self.__user_notifaction_token = '<@!{}>'.format(self.user.id)
+        
+        await client.change_presence(
+            status=discord.Status.idle,
+            activity=discord.Game(name="@ me for commands; DM me to avoid spam"),
+        )
 
     #https://discordpy.readthedocs.io/en/latest/api.html#message
     async def on_message(self, message):
