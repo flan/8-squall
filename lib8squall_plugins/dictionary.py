@@ -13,8 +13,9 @@ _MW_API_KEY = open("./m-w.dictionary.key").read().strip()
 def _get_merriam_webster(word):
     q = mw.CollegiateDictionary(_MW_API_KEY)
     return {
-        result.function: [sense.definition for sense in result.senses]
+        result.function: [sense.definition for sense in result.senses if sense.definition]
         for result in q.lookup(word)
+        if result.function
     }
 _DICT_PATTERNS = ('!word ', '!dict ', '!dictionary ')
         
@@ -35,8 +36,12 @@ def _get_urbandictionary(phrase):
     for entry in response.json()['list']:
         thumbs_up = entry['thumbs_up']
         thumbs_down = entry['thumbs_down']
-        if (thumbs_down == 0 and thumbs_up > 1) or (thumbs_up / float(thumbs_down) >= 1.5):
-            definitions.append((thumbs_up, "||{}||".format(entry['definition'].replace('[', '').replace(']', ''))))
+        if thumbs_down == 0:
+            if thumbs_up < 5:
+                continue
+        elif thumbs_up / float(thumbs_down) < 1.5:
+            continue
+        definitions.append((thumbs_up, "||{}||".format(entry['definition'].replace('[', '').replace(']', ''))))
     if definitions:
         return {
             "slang": [d for (r, d) in sorted(definitions, reverse=True)],
