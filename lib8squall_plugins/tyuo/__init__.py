@@ -24,3 +24,11 @@
 
 #opt-in/out will be universal on a per-user basis, since their fragments won't be
 #able to propagate too far from where they were said, wherever that may have been
+
+#so there will be an sqlite database for this module, which tracks permissions
+#server_id, user_id, allowed:bool, timestamp
+#maybe historical logging of all of these, just using ORDER BY timestamp DESC LIMIT 1 when checking
+
+#and every context will be given a name in a config-file referenced by this module
+#"context-id-string": [channel_id,], which then gets reverse-mapped in memory
+#if there's no mapping for a channel, it simply doesn't get tyuo support at all
