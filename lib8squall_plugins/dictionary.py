@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 import merriam_webster.api as mw
 
-import requests
-
 def get_help_summary(client, message):
-    return (
-        "`!dict[ionary] <word>` to get a definition; alias: `!word`",
-        "`!urbandict[ionary] <phrase>` to get a definition; aliases: `!udict`, `!uword`",
-    )
+    return ("`!dict[ionary] <word>` to get a definition; alias: `!word`",)
 
 _MW_API_KEY = open("./m-w.dictionary.key").read().strip()
 def _get_merriam_webster(word):
@@ -17,37 +12,6 @@ def _get_merriam_webster(word):
         for result in q.lookup(word)
         if result.function
     }
-_DICT_PATTERNS = ('!word ', '!dict ', '!dictionary ')
-        
-_URBAN_DICTIONARY_URL = "https://mashape-community-urban-dictionary.p.rapidapi.com/define"
-_URBAN_DICTIONARY_HEADERS = {
-    'x-rapidapi-key': open("./rapidapi.ud.key").read().strip(),
-    'x-rapidapi-host': "mashape-community-urban-dictionary.p.rapidapi.com"
-}
-def _get_urbandictionary(phrase):
-    response = requests.request(
-        "GET",
-        _URBAN_DICTIONARY_URL,
-        headers=_URBAN_DICTIONARY_HEADERS,
-        params={"term": phrase},
-    )
-    
-    definitions = []
-    for entry in response.json()['list']:
-        thumbs_up = entry['thumbs_up']
-        thumbs_down = entry['thumbs_down']
-        if thumbs_down == 0:
-            if thumbs_up < 5:
-                continue
-        elif thumbs_up / float(thumbs_down) < 1.5:
-            continue
-        definitions.append((thumbs_up, "||{}||".format(entry['definition'].replace('[', '').replace(']', ''))))
-    if definitions:
-        return {
-            "slang": [d for (r, d) in sorted(definitions, reverse=True)],
-        }
-    return None
-_UDICT_PATTERNS = ('!udict ', '!uword ' , '!urbandict ', '!urbandictionary ')
 
 def _format_response(response):
     output = []
@@ -60,24 +24,20 @@ def _format_response(response):
     return output
     
 async def handle_message(client, message):
-    for (patternset, handler) in (
-        (_DICT_PATTERNS, _get_merriam_webster),
-        (_UDICT_PATTERNS, _get_urbandictionary),
-    ):
-        for pattern in patternset:
-            if message.content.startswith(pattern):
-                subject = message.content[len(pattern):].strip()
-                if subject:
-                    try:
-                        response = handler(subject.lower())
-                        if response:
-                            await message.reply('\n'.join(_format_response(response)))
-                        else:
-                            await message.reply("No definitions were found.")
-                    except mw.WordNotFoundException as e:
-                        await message.reply(str(e))
-                    except Exception:
-                        await message.reply("Something didn't go quite right.")
-                        raise
-                return True
+    for pattern in ('!word ', '!dict ', '!dictionary '):
+        if message.content.startswith(pattern):
+            subject = message.content[len(pattern):].strip()
+            if subject:
+                try:
+                    response = _get_merriam_webster(subject.split()[0].lower())
+                    if response:
+                        await message.reply('\n'.join(_format_response(response)))
+                    else:
+                        await message.reply("No definitions were found.")
+                except mw.WordNotFoundException as e:
+                    await message.reply(str(e))
+                except Exception:
+                    await message.reply("Something didn't go quite right.")
+                    raise
+            return True
     return False
