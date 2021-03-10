@@ -32,3 +32,8 @@
 #and every context will be given a name in a config-file referenced by this module
 #"context-id-string": [channel_id,], which then gets reverse-mapped in memory
 #if there's no mapping for a channel, it simply doesn't get tyuo support at all
+
+
+#NOTE: make the bot respond with tyuo content whenever it's @tted, without ever going through the learning flow
+#it only learns passively, not what it's directly fed
+#move 8-squall behaviour to a trigger after this is implemented
