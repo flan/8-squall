@@ -37,3 +37,5 @@
 #NOTE: make the bot respond with tyuo content whenever it's @tted, without ever going through the learning flow
 #it only learns passively, not what it's directly fed
 #move 8-squall behaviour to a trigger after this is implemented
+
+#pre-emptively drop lines that start with "and", "or", "but", not" before learning
