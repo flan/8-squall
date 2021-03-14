@@ -2,7 +2,7 @@
 import random
 
 def get_help_summary(client, message):
-    return ("@ me and include a question-mark to get an 8-ball response.",)
+    return ("`!8ball` to get an 8-ball response; `!8squall` to get an 8-Squall response.",)
 
 _RESPONSES_8SQUALL = (
  "Meh.",
@@ -31,7 +31,10 @@ _RESPONSES_8BALL = (
 )
 
 async def handle_message(client, message):
-    if '?' in message.content and client.user in message.mentions:
+    if message.content.startswith(('!8ball ', '!8-ball ')):
+        await message.reply(random.choice(_RESPONSES_8BALL))
+        return True
+    if message.content.startswith(('!8squall ', '!8-squall ', '!8-Squall ')):
         if random.randint(0, 2) == 2: #33% chance of getting Squall
             response = random.choice(_RESPONSES_8SQUALL)
         else:
