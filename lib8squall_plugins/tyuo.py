@@ -105,18 +105,22 @@ async def handle_message(client, message):
                 if results:
                     await message.reply(results[0]['Utterance'])
                 else:
-                    await message.reply("I don't know enough to respond; please converse in my presence so I can learn more.")
-                    
+                    if _query_permission(guild_id, user_id):
+                        await message.reply("I don't know enough to respond; please converse in my presence so I can learn more.")
+                    else:
+                        await message.reply("I don't know enough to respond; use `!tyuo enable` to help me learn.")
+                        
             return True
         else: #learning opportunity
-            if len(message.content) > 20:
-                if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
-                    lines = [i.strip() for i in message.content.splitlines()]
-                    requests.post('http://localhost:48100/learn',
-                        json={
-                            "ContextId": context,
-                            "Input": [i for i in lines if i],
-                        },
-                        timeout=5.0,
-                    )
+            if _query_permission(guild_id, user_id):
+                if len(message.content) > 20:
+                    if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
+                        lines = [i.strip() for i in message.content.splitlines()]
+                        requests.post('http://localhost:48100/learn',
+                            json={
+                                "ContextId": context,
+                                "Input": [i for i in lines if i],
+                            },
+                            timeout=5.0,
+                        )
     return False
