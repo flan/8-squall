@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import collections
 import json
-import threading
+import random
 import sqlite3
+import threading
 
 import discord
 import requests
@@ -103,7 +105,14 @@ async def handle_message(client, message):
                 raise
             else:
                 if results:
-                    await message.reply(results[0]['Utterance'])
+                    results_by_score = collections.defaultdict(lambda : collections.defaultdict(list))
+                    for result in results:
+                        results_by_score[result['Score']][result['Surprise']].append((result['Utterance']))
+                    highest_score = sorted(results_by_score.keys(), reverse=True)[0]
+                    highest_surprise = sorted(results_by_score[highest_score].keys(), reverse=True)[0]
+                    utterance = random.choice(results_by_score[highest_score][highest_surprise])
+                    
+                    await message.reply(utterance)
                 else:
                     if _query_permission(guild_id, user_id):
                         await message.reply("I don't know enough to respond; please converse in my presence so I can learn more.")
@@ -113,7 +122,7 @@ async def handle_message(client, message):
             return True
         else: #learning opportunity
             if _query_permission(guild_id, user_id):
-                if len(message.content) > 40:
+                if len(message.content.split()) > 5:
                     if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
                         lines = [i.strip() for i in message.content.splitlines()]
                         requests.post('http://localhost:48100/learn',
