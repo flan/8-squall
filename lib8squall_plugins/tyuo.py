@@ -108,7 +108,7 @@ async def handle_message(client, message):
                     if _query_permission(guild_id, user_id):
                         await message.reply("I don't know enough to respond; please converse in my presence so I can learn more.")
                     else:
-                        await message.reply("I don't know enough to respond; use `!tyuo enable` to help me learn.")
+                        await message.reply("I don't know enough to respond; talk to others around me so I can learn.")
                         
             return True
         else: #learning opportunity
