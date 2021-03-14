@@ -111,10 +111,11 @@ async def handle_message(client, message):
         else: #learning opportunity
             if len(message.content) > 20:
                 if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
+                    lines = [i.strip() for i in message.content.splitlines()]
                     requests.post('http://localhost:48100/learn',
                         json={
                             "ContextId": context,
-                            "Input": [message.content],
+                            "Input": [i for i in lines if i],
                         },
                         timeout=5.0,
                     )
