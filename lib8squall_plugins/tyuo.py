@@ -113,7 +113,7 @@ async def handle_message(client, message):
             return True
         else: #learning opportunity
             if _query_permission(guild_id, user_id):
-                if len(message.content) > 20:
+                if len(message.content) > 40:
                     if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
                         lines = [i.strip() for i in message.content.splitlines()]
                         requests.post('http://localhost:48100/learn',
