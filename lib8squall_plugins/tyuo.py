@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import collections
 import json
+import math
 import random
 import sqlite3
 import threading
@@ -107,7 +108,7 @@ async def handle_message(client, message):
                 if results:
                     results_by_score = collections.defaultdict(lambda : collections.defaultdict(list))
                     for result in results:
-                        results_by_score[result['Score']][result['Surprise']].append((result['Utterance']))
+                        results_by_score[math.floor(result['Score'])][result['Surprise']].append((result['Utterance']))
                     highest_score = sorted(results_by_score.keys(), reverse=True)[0]
                     highest_surprise = sorted(results_by_score[highest_score].keys(), reverse=True)[0]
                     utterance = random.choice(results_by_score[highest_score][highest_surprise])
