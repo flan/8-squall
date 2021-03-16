@@ -77,8 +77,8 @@ def _from_inches(quantity):
 DECODERS['In'] = _from_inches
 DECODERS['Inch'] = _from_inches
 DECODERS['Inches'] = _from_inches
-ENCODERS["''"] = _from_inches
-ENCODERS['"'] = _from_inches
+DECODERS["''"] = _from_inches
+DECODERS['"'] = _from_inches
 
 def _to_inches(intermediate):
     return (intermediate * 39.3700787402, "''")
@@ -94,7 +94,7 @@ def _from_feet(quantity):
 DECODERS['Ft'] = _from_feet
 DECODERS['Foot'] = _from_feet
 DECODERS['Feet'] = _from_feet
-ENCODERS["'"] = _from_feet
+DECODERS["'"] = _from_feet
 
 def _to_feet(intermediate):
     return (intermediate * 3.280839895, "'")
