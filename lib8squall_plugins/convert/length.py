@@ -77,12 +77,16 @@ def _from_inches(quantity):
 DECODERS['In'] = _from_inches
 DECODERS['Inch'] = _from_inches
 DECODERS['Inches'] = _from_inches
+ENCODERS["''"] = _from_inches
+ENCODERS['"'] = _from_inches
 
 def _to_inches(intermediate):
     return (intermediate * 39.3700787402, "''")
 ENCODERS['In'] = _to_inches
 ENCODERS['Inch'] = _to_inches
 ENCODERS['Inches'] = _to_inches
+ENCODERS["''"] = _to_inches
+ENCODERS['"'] = _to_inches
 
 
 def _from_feet(quantity):
@@ -90,12 +94,14 @@ def _from_feet(quantity):
 DECODERS['Ft'] = _from_feet
 DECODERS['Foot'] = _from_feet
 DECODERS['Feet'] = _from_feet
+ENCODERS["'"] = _from_feet
 
 def _to_feet(intermediate):
     return (intermediate * 3.280839895, "'")
 ENCODERS['Ft'] = _to_feet
 ENCODERS['Foot'] = _to_feet
 ENCODERS['Feet'] = _to_feet
+ENCODERS["'"] = _to_feet
 
 
 def _from_yards(quantity):
@@ -105,6 +111,7 @@ DECODERS['Yd'] = _from_yards
 DECODERS['Yds'] = _from_yards
 DECODERS['Yard'] = _from_yards
 DECODERS['Yards'] = _from_yards
+DECODERS["'''"] = _from_yards
 
 def _to_yards(intermediate):
     return (intermediate * 1.0936132983, "'''")
@@ -113,6 +120,7 @@ ENCODERS['Yd'] = _to_yards
 ENCODERS['Yds'] = _to_yards
 ENCODERS['Yard'] = _to_yards
 ENCODERS['Yards'] = _to_yards
+ENCODERS["'''"] = _to_yards
 
 
 def _from_miles(quantity):
