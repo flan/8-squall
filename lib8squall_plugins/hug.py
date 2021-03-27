@@ -86,7 +86,7 @@ def _get_random_hug():
         LIMIT 1
         """
         )
-        return CUR.fetchone()
+        return CUR.fetchone()[0]
 
 
 def _validate_urls(message_content: str):
@@ -105,36 +105,38 @@ def _validate_urls(message_content: str):
     return good_urls, bad_urls
 
 
-async def handle_message(_: discord.Client, message: discord.message):
-    if message.content.startswith("!hugadd"):
-        # TODO: Check permissions.
-        valid_urls, bad_urls = _validate_urls(message.content)
-        if bad_urls:
-            response = "Oh no, you had these invalid urls in there! Fix them and try again. \n  {}".format(
-                "\n  ".join(bad_urls)
-            )
-            await message.reply(response)
-            return True
-        _insert_hugs(valid_urls)
-        response = "I've added {} new hugs - if they weren't already there!".format(
-            len(valid_urls)
-        )
-        await message.reply(response)
-        return True
+#HACK: simple hug-permissions ACL
+_HUGGERS = [int(id) for id in (line.strip() for line in open('./hugs.acl', 'r')) if id]
 
-    if message.content.startswith("!hugdel"):
-        # TODO: Check permissions.
-        valid_urls, bad_urls = _validate_urls(message.content)
-        if bad_urls:
-            response = "Oh no, you had these invalid urls in there! Fix them and try again. \n  {}".format(
-                "\n  ".join(bad_urls)
+async def handle_message(_: discord.Client, message: discord.message):
+    if message.channel.type == discord.ChannelType.private:
+        if message.content.startswith("!hugadd ") and message.author.id in _HUGGERS:
+            valid_urls, bad_urls = _validate_urls(message.content)
+            if bad_urls:
+                response = "Oh no, you had these invalid urls in there! Fix them and try again. \n  {}".format(
+                    "\n  ".join(bad_urls)
+                )
+                await message.reply(response)
+                return True
+            _insert_hugs(valid_urls)
+            response = "I've added {} new hugs - if they weren't already there!".format(
+                len(valid_urls)
             )
             await message.reply(response)
             return True
-        _delete_hugs(valid_urls)
-        response = "I've deleted {} hugs - if they existed!".format(len(valid_urls))
-        await message.reply(response)
-        return True
+
+        if message.content.startswith("!hugdel ") and message.author.id in _HUGGERS:
+            valid_urls, bad_urls = _validate_urls(message.content)
+            if bad_urls:
+                response = "Oh no, you had these invalid urls in there! Fix them and try again. \n  {}".format(
+                    "\n  ".join(bad_urls)
+                )
+                await message.reply(response)
+                return True
+            _delete_hugs(valid_urls)
+            response = "I've deleted {} hugs - if they existed!".format(len(valid_urls))
+            await message.reply(response)
+            return True
 
     if message.content.startswith("!hug"):
         await message.reply(_get_random_hug())
