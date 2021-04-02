@@ -3,6 +3,7 @@
 import collections
 import importlib
 import json
+import re
 import traceback
 
 import discord
@@ -21,11 +22,11 @@ _PLUGINS = tuple(_PluginSpec(
 ) for plugin_spec in json.load(open('./plugin-specs.json')))
 
 class Magic8Squall(discord.Client):
-    __user_notifaction_token = None
+    __user_notifaction_token_re = None
     
     async def on_ready(self):
         print('Logged on as {}'.format(self.user))
-        self.__user_notifaction_token = '<@!{}>'.format(self.user.id)
+        self.__user_notifaction_token_re = re.compile(r'^<@!?{}>$'.format(self.user.id))
         
         await client.change_presence(
             status=discord.Status.idle,
@@ -59,7 +60,7 @@ class Magic8Squall(discord.Client):
                 if await plugin.module.handle_message(self, message):
                     break #message was handled
             else:
-                if self.user in message.mentions and message.content.strip() == self.__user_notifaction_token:
+                if self.user in message.mentions and self.__user_notifaction_token_re.match(message.content.strip()):
                     help_summaries = []
                     for plugin in _PLUGINS:
                         if message.channel.type == discord.ChannelType.text:
