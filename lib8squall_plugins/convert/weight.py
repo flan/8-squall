@@ -93,3 +93,15 @@ def _to_tons(intermediate):
     return (intermediate * 1.102311310924388e-06, 't')
 ENCODERS['Ton'] = _to_tons
 ENCODERS['Tons'] = _to_tons
+
+def _from_stone(quantity):
+    return (quantity * 6350.29, 'st')
+DECODERS['St'] = _from_stone
+DECODERS['Stone'] = _from_stone
+DECODERS['Stones'] = _from_stone
+
+def _to_stone(intermediate):
+    return (intermediate * 0.0001574731232746851, 'st')
+ENCODERS['St'] = _to_stone
+ENCODERS['Stone'] = _to_stone
+ENCODERS['Stones'] = _to_stone
