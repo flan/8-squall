@@ -5,10 +5,11 @@ _Currency = collections.namedtuple("Currency", (
     "code",
     "symbol",
 ))
-_CURRENCIES = {currency.code: currency for currency in (
+CURRENCIES = {currency.code: currency for currency in (
     _Currency('AUD', '$'),
     _Currency('BGN', ''),
     _Currency('BRL', '$'),
+    _Currency('BTC', '₿'),
     _Currency('CAD', '$'),
     _Currency('CHF', ''),
     _Currency('CNY', '¥'),
@@ -42,5 +43,5 @@ _CURRENCIES = {currency.code: currency for currency in (
 )}
 
 def get_currency(symbol):
-    return _CURRENCIES.get(symbol.upper())
+    return CURRENCIES.get(symbol.upper())
     
