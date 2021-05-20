@@ -26,7 +26,18 @@ def get_rates(currency):
             }).json()
             print("fixer.io response: {}".format(rates_data))
             
+            doge_data = requests.get("https://sochain.com/api/v2/get_price/DOGE/USD").json()
+            doge_value = 0.0
+            for doge_price_data in doge_data['data']['prices']:
+                doge_value += float(doge_price_data['price'])
+            doge_value /= len(doge_data['data']['prices'])
+            print("doge value in USD: {}".format(doge_value))
+            
             _CACHE = {currencies.get_currency(k): v for (k, v) in rates_data['rates'].items()}
+            
+            doge_value /= _CACHE[currencies.get_currency('USD')]
+            _CACHE[currencies.get_currency('DOGE')] = 1.0 / doge_value
+            
             _CACHE_LAST_UPDATED = rates_data['timestamp']
             
         relative_rate = _CACHE[currency]
