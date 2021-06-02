@@ -57,10 +57,15 @@ async def handle_message(client, message):
                 ):
                     result = _process(module, quantity, unit1, unit2)
                     if result:
+                        inverted_result = _process(module, quantity, unit2, unit1)[0]
+                        
                         (result, normalised_unit1, normalised_unit2) = result
-                        await message.reply("{:,.2f}{} = {:,.2f}{}".format(
-                            quantity, normalised_unit1,
-                            result, normalised_unit2,
+                        await message.reply("{base:,.2f}{unit1} = {result:,.2f}{unit2}\n{base:,.2f}{unit2} = {inverted_result:,.2f}{unit1}".format(
+                            base=quantity,
+                            result=result,
+                            inverted_result=inverted_result,
+                            unit1=normalised_unit1,
+                            unit2=normalised_unit2,
                         ))
                         break
                 else:

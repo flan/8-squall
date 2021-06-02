@@ -34,9 +34,14 @@ async def handle_message(client, message):
                 await message.reply("Unable to fetch current currency data; please try again later.")
                 raise
             else:
-                await message.reply("{}{:,.2f} {} = {}{:,.2f} {}".format(
-                    cur1.symbol, quantity, cur1.code,
-                    cur2.symbol, quantity * current_rate, cur2.code,
+                await message.reply("{symbol1}{base:,.2f} {code1} = {symbol2}{rate:,.2f} {code2}\n{symbol2}{base:,.2f} {code2} = {symbol1}{inverted_rate:,.2f} {code1}".format(
+                    symbol1=cur1.symbol,
+                    symbol2=cur2.symbol,
+                    code1=cur1.code,
+                    code2=cur2.code,
+                    base=quantity,
+                    rate=(quantity * current_rate),
+                    inverted_rate=(quantity / current_rate),
                 ))
         return True
     return False
