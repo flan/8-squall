@@ -23,7 +23,7 @@ async def handle_message(client, message):
                 return True
                 
             quantity = query_match.group('qty')
-            if quantity is None or quantity == '.': #the regex allows '.' for the sake of readability
+            if not quantity or quantity == '.': #the regex allows '.' for the sake of readability
                 quantity = 1.0
             else:
                 quantity = float(quantity)
