@@ -5,7 +5,12 @@ from . import currencies
 from . import rates
 
 def get_help_summary(client, message):
-    return ("`!curr [quantity] <symbol> [to] <symbol>` for currency-conversion.",)
+    return (
+        "Currency-conversion",
+        (
+            "`!curr [quantity] <symbol> [to] <symbol>`, like `!curr 1 CAD usd`.",
+        ),
+    )
 
 _QUERY_RE = re.compile(r'(?P<qty>-?\d*\.?\d*)?\s*(?P<cur1>[a-zA-Z]{3,4})\s+(?:to\s+)?(?P<cur2>[a-zA-Z]{3,4})')
 

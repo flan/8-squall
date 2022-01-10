@@ -3,12 +3,14 @@ import collections
 import json
 import math
 import random
+import re
 import sqlite3
 import threading
 
 import discord
 import requests
 
+DISCORD_MAGIC_TOKEN_RE = re.compile(r'<.+?>')
 
 CONN_LOCK = threading.Lock()
 CONN = sqlite3.connect("./tyuo-access.sqlite3", check_same_thread=False)
@@ -56,15 +58,21 @@ def _revoke_permission(guild_id, user_id):
 
 
 def get_help_summary(client, message):
-    if message.channel.type != discord.ChannelType.text:
-        return ()
-    responses = ["@ me to talk; `!tyuo status` to see whether you've opted in as a teacher."]
-    if message.channel.id in CHANNEL_IDS_TO_CONTEXTS:
-        if _query_permission(message.guild.id, message.author.id):
-            responses.append("`!tyuo disable` to stop teaching the chatbot.")
-        else:
-            responses.append("`!tyuo enable` to start teaching the chatbot.")
-    return responses
+    if message.channel.type == discord.ChannelType.text:
+        if message.channel.id in CHANNEL_IDS_TO_CONTEXTS:
+            summary = ["@ me with some text or reply to one of my messages to talk."]
+            
+            if _query_permission(message.guild.id, message.author.id):
+                summary.append("Your text will be used to teach the chatbot; `!tyuo disable` to stop.")
+            else:
+                summary.append("Your text will not be used to teach the chatbot; `!tyuo enable` to opt in.")
+            summary.append("`!tyuo status` can also be used to see whether you've opted in as a teacher on this server.")
+            
+            return (
+                "tyuo chatbot",
+                summary,
+            )
+    return None
     
     
 async def handle_message(client, message):
@@ -92,12 +100,16 @@ async def handle_message(client, message):
                 
             return True
         elif client.user in message.mentions: #speak request
-            debugDisplay = False
+            debug_display = False
             if ' --debug' in message.content:
                 c = message.content.replace(' --debug', '')
-                debugDisplay = True
+                debug_display = True
             else:
                 c = message.content
+                
+            c = DISCORD_MAGIC_TOKEN_RE.sub('', c.strip())
+            if not c: #don't respond to empty pings, since these are intended to trigger help
+                return False
                 
             try:
                 r = requests.post('http://localhost:48100/speak',
@@ -113,7 +125,7 @@ async def handle_message(client, message):
                 raise
             else:
                 if results:
-                    if debugDisplay:
+                    if debug_display:
                         await message.reply("""```javascript
 {}
 ```""".format(json.dumps(["{:.2f}: {}".format(r['Score'], r['Utterance']) for r in results], indent=2)))

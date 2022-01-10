@@ -5,7 +5,14 @@ from . import tzdelta
 from . import tzlist
 
 def get_help_summary(client, message):
-    return ("`!tz <time> <timezone>` or `!tz <timezone> [timezone...]` for time-conversion.",)
+    return (
+        "Timezone-conversion",
+        (
+            "`!tz <timezone> [timezone...]`, like `!tz edt`, will show the current time in the given timezones.",
+            "`!tz <time> <timezone>`, like `!tz 7pm mst`, will give time remaining/elapsed relative to the target value.",
+            "Times default to 24h without an am/pm specifier; minutes, delimited by colons or dots, are optional.",
+        ),
+    )
 
 async def handle_message(client, message):
     if message.content.startswith('!tz '):

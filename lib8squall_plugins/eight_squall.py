@@ -3,8 +3,13 @@ import random
 
 def get_help_summary(client, message):
     return (
-        "`!8ball <question>` to get an 8-ball response",
-        "`!8squall <question>` to get an 8-Squall response.",
+        "8-Ball",
+        (
+            "`!8-ball <question>` to get an 8-ball response.",
+            "Aliases: `!8ball`, `!8-ball,`, `!8ball,`",
+            "`!8-squall <question>` to get an 8-Squall response.",
+            "Aliases: `!8squall`, `!8-Squall`, `!8-squall,`, `!8squall,`, `!8-Squall,`",
+        ),
     )
 
 _RESPONSES_8SQUALL = (
@@ -34,10 +39,10 @@ _RESPONSES_8BALL = (
 )
 
 async def handle_message(client, message):
-    if message.content.startswith(('!8ball ', '!8-ball ')):
+    if message.content.startswith(('!8ball ', '!8-ball ', '!8ball, ', '!8-ball, ')):
         await message.reply(random.choice(_RESPONSES_8BALL))
         return True
-    if message.content.startswith(('!8squall ', '!8-squall ', '!8-Squall ')):
+    if message.content.startswith(('!8squall ', '!8-squall ', '!8-Squall ', '!8squall, ', '!8-squall, ', '!8-Squall, ')):
         if random.randint(0, 2) == 2: #33% chance of getting Squall
             response = random.choice(_RESPONSES_8SQUALL)
         else:

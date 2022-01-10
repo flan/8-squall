@@ -2,7 +2,14 @@
 import random
 
 def get_help_summary(client, message):
-    return ("`!choose <choices delimited by common separators>` to have one picked.",)
+    return (
+        "Decision-making",
+        (
+            "`!choose <choices>` to have one picked.",
+            "Choices may be delimited by space, comma, or semicolon, in ascending order of precedence.",
+            "For example, in \"hello, world; goodbye\", the presence of a semicolon means there are two choices: \"hello, world\" and \"goodbye\"; \"pie cake\" also has two choices because space is the highest-precedence (and only) delimiter.",
+        ),
+    )
 
 async def handle_message(client, message):
     if message.content.startswith(('!choose ', '!choose\n')):

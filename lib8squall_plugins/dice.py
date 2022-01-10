@@ -2,7 +2,14 @@
 import random
 
 def get_help_summary(client, message):
-    return ("`!dice <#d#r> [#d#...]` to simulate dice rolls, like `2d10`; alias: `!roll`",)
+    return (
+        "Dice-simulation",
+        (
+            "`!dice <#d#> [#d#...]` to simulate dice rolls, like `!dice 2d10 5d6`",
+            "The value before the `d` is the number of dice to roll and the second is the number of faces.",
+            "Alias: `!roll`",
+        ),
+    )
 
 async def handle_message(client, message):
     if message.content.startswith(('!dice ', '!roll ')):

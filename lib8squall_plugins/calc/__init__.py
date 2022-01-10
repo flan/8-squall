@@ -2,7 +2,14 @@
 from . import calc
 
 def get_help_summary(client, message):
-    return ("`!calc help` to learn how I can crunch numbers for you.",)
+    return (
+        "Calculator",
+        (
+            "`!calc <math>` will perform calculations; all simple expressions work.",
+            "`!calc help` will describe complex stateful and formulaic operation.",
+            "`!calc list` will list all built-in structures.",
+        ),
+    )
 
 def _try_int(value):
     try:

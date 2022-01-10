@@ -24,6 +24,20 @@ _PLUGINS = tuple(_PluginSpec(
 class Magic8Squall(discord.Client):
     __user_notifaction_token_re = None
     
+    def _format_help_response(self, header, summaries):
+        chunks = []
+        
+        chunk = header + '\n'
+        for summary in summaries:
+            if len(chunk) + len(summary) < 2000:
+                chunk += '\n' + summary
+            else:
+                chunks.append(chunk)
+                chunk = summary
+        chunks.append(chunk)
+        
+        return chunks
+        
     async def on_ready(self):
         print('Logged on as {}'.format(self.user))
         self.__user_notifaction_token_re = re.compile(r'^<@!?{}>$'.format(self.user.id))
@@ -69,20 +83,32 @@ class Magic8Squall(discord.Client):
                             if message.channel.guild.id in plugin.disallowed_servers:
                                 if message.channel.id not in plugin.allowed_channels:
                                     continue
-                        help_summaries.extend(plugin.module.get_help_summary(self, message))
-                        
+                                    
+                        help_summary = plugin.module.get_help_summary(self, message)
+                        if help_summary:
+                            (module_name, help_lines) = help_summary
+                            help_summaries.append("**{}**\n{}\n".format(
+                                module_name,
+                                "\n> \n".join("> {}".format(line) for line in help_lines),
+                            ))
+                            
                     if help_summaries:
                         if message.channel.type == discord.ChannelType.text:
-                            user=await self.fetch_user(message.author.id)
-                            await user.send("In `{}` `#{}`, this is what can be done:\n\n{}".format(
-                                message.channel.guild.name,
-                                message.channel.name,
-                                "\n\n".join(help_summaries),
-                            ))
+                            user = await self.fetch_user(message.author.id)
+                            for chunk in self._format_help_response(
+                                "In `{}` `#{}`, this is what can be done:".format(
+                                    message.channel.guild.name,
+                                    message.channel.name,
+                                ),
+                                help_summaries,
+                            ):
+                                await user.send(chunk)
                         else:
-                            await message.channel.send("In a private context, this is what can be done:\n\n{}".format(
-                                "\n\n".join(help_summaries),
-                            ))
+                            for chunk in self._format_help_response(
+                                "In a private context, this is what can be done:",
+                                help_summaries,
+                            ):
+                                await message.channel.send(chunk)
         except Exception:
             traceback.print_exc()
             

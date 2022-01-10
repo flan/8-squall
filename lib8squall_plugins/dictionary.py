@@ -2,7 +2,14 @@
 import merriam_webster.api as mw
 
 def get_help_summary(client, message):
-    return ("`!dict[ionary] <word>` to get a definition; alias: `!word`",)
+    return (
+        "Dictionary-lookup",
+        (
+            "`!dict <word>` to get a definition.",
+            "Lookups are performed against Merriam-Webster, so only a single word is evaluated.",
+            "Aliases: `!dictionary`, `!word`",
+        ),
+    )
 
 _MW_API_KEY = open("./m-w.dictionary.key").read().strip()
 def _get_merriam_webster(word):

@@ -2,7 +2,14 @@
 import requests
 
 def get_help_summary(client, message):
-    return ("`!urbandict[ionary] <phrase>` to get a definition; aliases: `!udict`, `!uword`",)
+    return (
+        "Urban Dictionary-lookup",
+        (
+            "`!udict <word>` to get a definition.",
+            "Lookups are performed using an unstable API that may be intermittently unavailable; only one word is evaluated.",
+            "Aliases: `!urbandictionary`, `!urbandict`, `!uword`",
+        ),
+    )
 
 _URBAN_DICTIONARY_URL = "https://mashape-community-urban-dictionary.p.rapidapi.com/define"
 _URBAN_DICTIONARY_HEADERS = {
