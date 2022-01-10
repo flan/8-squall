@@ -73,12 +73,16 @@ class Magic8Squall(discord.Client):
                         
                     if help_summaries:
                         if message.channel.type == discord.ChannelType.text:
-                            await message.channel.send(
-                                content="\n\n".join(help_summaries),
-                                delete_after=(4.0 * len(help_summaries)),
-                            )
+                            user=await self.fetch_user(message.author.id)
+                            await user.send("In `{}` `#{}`, this is what can be done:\n\n{}".format(
+                                message.channel.guild.name,
+                                message.channel.name,
+                                "\n\n".join(help_summaries),
+                            ))
                         else:
-                            await message.channel.send("\n\n".join(help_summaries))
+                            await message.channel.send("In a private context, this is what can be done:\n\n{}".format(
+                                "\n\n".join(help_summaries),
+                            ))
         except Exception:
             traceback.print_exc()
             
