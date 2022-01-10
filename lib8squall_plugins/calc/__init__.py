@@ -5,9 +5,11 @@ def get_help_summary(client, message):
     return (
         "Calculator",
         (
-            "`!calc <math>` will perform calculations; all simple expressions work and you can perform multiple calculations by separating them with semicolons.",
-            "`!calc help` will describe complex stateful and formulaic operation.",
+            "`!calc <math> [;<math>]` will perform calculations; the equation-format is the common scholastic standard.",
+            "`<math>` can be variable-assignment (`x = 22 * sqrt(9)`), functions (`f(x) = x * 2`), or equations (`x + 2 / f(7)`); the order in which these are supplied does not matter, but at least one equation must be performed to produce output.",
             "`!calc list` will list all built-in structures.",
+            "Linebreaks can be used in place of semicolons for readability.",
+            "Function parameters must be scalars or variables; directly nesting a function will prevent expression-compilation.",
         ),
     )
 
@@ -37,14 +39,6 @@ async def handle_message(client, message):
             output.append("`{}`".format(',  '.join(session.listVariables())))
             
             await message.reply('\n'.join(output))
-        elif request_lower == 'help':
-            await message.reply('\n'.join((
-                "`!calc <variable | function | equation>[; ...][\\n ...] | list`",
-                "The order of input does not matter.",
-                "",
-                "Function parameters must be scalars or variables;",
-                "directly nesting a function will prevent compilation.",
-            )))
         else:
             try:
                 session = calc.Session(request.replace('\n', ';'))
