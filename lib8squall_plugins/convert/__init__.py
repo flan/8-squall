@@ -13,7 +13,7 @@ from . import volume
 from . import weight
 
 def get_help_summary(client, message):
-    return ("`!conv[ert] [quantity] <unit> [to] <unit>` for scale conversion.",)
+    return ("`!conv[ert] [quantity] <unit> [to] <unit>` for scale-conversion.",)
 
 _QUERY_RE = re.compile(r'(?P<qty>-?\d*\.?\d*)?\s*(?P<unit1>["\'\w]+)\s+(?:to\s+)?(?P<unit2>["\'\w]+)')
 

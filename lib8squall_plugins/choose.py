@@ -2,7 +2,7 @@
 import random
 
 def get_help_summary(client, message):
-    return ("`!choose <choices delimited by common separators>` to have one picked",)
+    return ("`!choose <choices delimited by common separators>` to have one picked.",)
 
 async def handle_message(client, message):
     if message.content.startswith(('!choose ', '!choose\n')):

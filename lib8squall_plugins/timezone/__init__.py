@@ -5,7 +5,7 @@ from . import tzdelta
 from . import tzlist
 
 def get_help_summary(client, message):
-    return ("`!tz <time> <timezone>` or `!tz <timezone> [timezone...]` for time conversion.",)
+    return ("`!tz <time> <timezone>` or `!tz <timezone> [timezone...]` for time-conversion.",)
 
 async def handle_message(client, message):
     if message.content.startswith('!tz '):
