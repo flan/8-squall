@@ -34,8 +34,9 @@ CUR: sqlite3.Cursor = CONN.cursor()
 CUR.execute(
     """
 CREATE TABLE IF NOT EXISTS hugs(
-    id INTEGER,
-    url TEXT,
+    id INTEGER NOT NULL,
+    submitter INTEGER DEFAULT NULL,
+    url TEXT NOT NULL,
     PRIMARY KEY(id),
     UNIQUE(url)
 )
@@ -43,36 +44,36 @@ CREATE TABLE IF NOT EXISTS hugs(
 )
 
 
-def _insert_hugs(urls: Iterable):
+def _insert_hugs(user_id: int, urls: Iterable):
     """Add the given list of hugs."""
     with CONN_LOCK:
-        for url in urls:
-            CUR.execute(
-                """
-            INSERT OR IGNORE INTO hugs(url)
-            VALUES(?)
-            """,
-                (url,),
-            )
-            CONN.commit()
-
+        with CONN:
+            for url in urls:
+                CUR.execute(
+                    """
+                INSERT OR IGNORE INTO hugs(submitter, url)
+                VALUES(?, ?)
+                """,
+                    (user_id, url,),
+                )
 
 # Setup initial hugs list.
-_insert_hugs(INITIAL_HUGS)
+_insert_hugs(None, INITIAL_HUGS)
 
 
 def _delete_hugs(urls: Iterable):
     """Delete the given list of hugs."""
 
     with CONN_LOCK:
-        for url in urls:
-            CUR.execute(
-                """
-            DELETE FROM hugs WHERE
-                url = ?
-            """,
-                (url,),
-            )
+        with CONN:
+            for url in urls:
+                CUR.execute(
+                    """
+                DELETE FROM hugs WHERE
+                    url = ?
+                """,
+                    (url,),
+                )
 
 
 def _get_random_hug():
@@ -118,7 +119,7 @@ async def handle_message(_: discord.Client, message: discord.message):
                 )
                 await message.reply(response)
                 return True
-            _insert_hugs(valid_urls)
+            _insert_hugs(message.author.id, valid_urls)
             response = "I've added {} new hugs - if they weren't already there!".format(
                 len(valid_urls)
             )
