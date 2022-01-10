@@ -5,7 +5,7 @@ def get_help_summary(client, message):
     return (
         "Calculator",
         (
-            "`!calc <math>` will perform calculations; all simple expressions work.",
+            "`!calc <math>` will perform calculations; all simple expressions work and you can perform multiple calculations by separating them with semicolons.",
             "`!calc help` will describe complex stateful and formulaic operation.",
             "`!calc list` will list all built-in structures.",
         ),
