@@ -2,7 +2,10 @@
 import random
 
 def get_help_summary(client, message):
-    return ("`!8ball` to get an 8-ball response; `!8squall` to get an 8-Squall response.",)
+    return (
+        "`!8ball <question>` to get an 8-ball response",
+        "`!8squall <question>` to get an 8-Squall response.",
+    )
 
 _RESPONSES_8SQUALL = (
  "Meh.",
