@@ -2,10 +2,10 @@
 import random
 
 def get_help_summary(client, message):
-    return ("`!dice <#d#r> [#d#...]` to simulate dice rolls, like `2d10`.",)
+    return ("`!dice <#d#r> [#d#...]` to simulate dice rolls, like `2d10`; alias: `!roll`",)
 
 async def handle_message(client, message):
-    if message.content.startswith('!dice '):
+    if message.content.startswith(('!dice ', '!roll ')):
         response = []
         for token in message.content[6:].split():
             token = token.strip().lower()
