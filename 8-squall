@@ -93,6 +93,7 @@ class Magic8Squall(discord.Client):
                             ))
                             
                     if help_summaries:
+                        help_summaries.sort()
                         if message.channel.type == discord.ChannelType.text:
                             user = await self.fetch_user(message.author.id)
                             for chunk in self._format_help_response(
