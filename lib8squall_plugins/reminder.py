@@ -20,7 +20,7 @@ def get_help_summary(client: discord.Client, message: discord.message):
             "There is a reasonable effort to guess intended time from natural language, like `!remember eat a food in 3 days` or `!remember take a shower on feb 18th`.",
             "If you provide a more ISO-like timestamp, timezones and offsets are processed and the date-format is DMY or YMD, not the American MDY; all absolute timestamps assume {} if unspecified.".format(datetime.datetime.now().astimezone().tzinfo),
             "`!recall [text]` will list all reminders, optionally filtered by the given text. When using DMs, all reminders are displayed; when using this within a server, only reminders set on that server will be displayed.",
-            "`!forget <ids> [ids]` removes the specified reminders. IDs may be delimited by commas or a range can be supplied, like `1,3-5`.",
+            "`!forget <ids> [ids...]` removes the specified reminders. IDs may be delimited by commas or a range can be supplied, like `1,3-5`.",
             "Please be aware that these reminders are not stored securely. Do not trust this system to store private or essential information.",
         ),
     )
