@@ -42,13 +42,13 @@ def _enumerate_reminders(user_id: int, guild_id: int):
         if guild_id is None:
             CUR.execute("""SELECT id, description, context_url, timestamp FROM reminders
                 WHERE user_id = ?
-                ORDER BY timestamp ASC, id ASC
+                ORDER BY timestamp ASC NULLS LAST, id ASC
             """, (user_id,))
         else:
             CUR.execute("""SELECT id, description, context_url, timestamp FROM reminders
                 WHERE user_id = ?
                   AND guild_id = ?
-                ORDER BY timestamp ASC, id ASC
+                ORDER BY timestamp ASC NULLS LAST, id ASC
             """, (user_id, guild_id))
         return CUR.fetchall()
 
