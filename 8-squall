@@ -1,5 +1,16 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
+
+"""
+8-Squall requires relatively few permissions:
+ - Send Messages
+ - Add Reactions
+
+After replacing the ID, visit
+https://discord.com/oauth2/authorize?client_id=<your-instance's-ID>&permissions=2112&scope=bot
+to add your instance to a server you administrate.
+"""
+
 import collections
 import importlib
 import json
