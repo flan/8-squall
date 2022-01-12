@@ -17,7 +17,7 @@ def get_help_summary(client: discord.Client, message: discord.message):
         "Reminders",
         (
             "`!remember <description> [(on <day>|in <offset>)]` adds a reminder, optionally also anchoring a timestamp.",
-            "There is a reasonable effort to guess intended time from natural language, like `!remind eat a food in 3 days` or `!remind take a shower on feb 18th`.",
+            "There is a reasonable effort to guess intended time from natural language, like `!remember eat a food in 3 days` or `!remember take a shower on feb 18th`.",
             "If you specify a more ISO-like timestamp, timezones and offsets are processed and the date-format is DMY or YMD, not the American MDY; all absolute timestamps assume {} if unspecified.".format(datetime.datetime.now().astimezone().tzinfo),
             "`!recall [text]` will list all reminders, optionally filtered by the given text. When using DMs, all reminders are displayed; when using this within a server, only reminders set on that server will be displayed.",
             "`!forget <ids> [ids]` removes the enumerated reminders. IDs may be delimited by commas or a range can be supplied, like `1,3-5`.",
