@@ -15,7 +15,7 @@ _HUGGERS = [int(id) for id in (line.strip() for line in open('./hugs.acl', 'r'))
 def get_help_summary(client: discord.Client, message: discord.message):
     summary = ["`!hug` to get a (hopefully) nice hug from a robot."]
     
-    if message.author.id in _HUGGERS:
+    if message.channel.type == discord.ChannelType.private and message.author.id in _HUGGERS:
         summary.append("`!hugadd <url> [url...]` to add new hug images to the database; these URLs should be permalinks.")
         summary.append("`!hugdel <url> [url...]` to remove hug images from the database.")
         
