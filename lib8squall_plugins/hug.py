@@ -149,7 +149,7 @@ async def handle_message(_: discord.Client, message: discord.message):
             await message.reply(response)
             return True
 
-    if message.content.startswith("!hug"):
+    if message.content.strip() == "!hug":
         await message.reply(_get_random_hug())
         return True
 
