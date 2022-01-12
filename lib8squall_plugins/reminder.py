@@ -2,6 +2,7 @@
 import datetime
 import sqlite3
 import threading
+import time
 
 from typing import Iterable, List, Union
 
@@ -31,33 +32,34 @@ CUR.execute("""CREATE TABLE IF NOT EXISTS reminders(
     id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     guild_id INTEGER,
+    recorded_timestamp INTEGER NOT NULL,
     description TEXT NOT NULL,
     context_url TEXT,
-    timestamp INTEGER,
+    relevant_timestamp INTEGER,
     PRIMARY KEY(id)
 )""")
 
 def _enumerate_reminders(user_id: int, guild_id: int):
     with CONN_LOCK:
         if guild_id is None:
-            CUR.execute("""SELECT id, description, context_url, timestamp FROM reminders
+            CUR.execute("""SELECT id, recorded_timestamp, description, context_url, relevant_timestamp FROM reminders
                 WHERE user_id = ?
-                ORDER BY timestamp ASC NULLS LAST, id ASC
+                ORDER BY relevant_timestamp ASC NULLS LAST, recorded_timestamp ASC, id ASC
             """, (user_id,))
         else:
-            CUR.execute("""SELECT id, description, context_url, timestamp FROM reminders
+            CUR.execute("""SELECT id, recorded_timestamp, description, context_url, relevant_timestamp FROM reminders
                 WHERE user_id = ?
                   AND guild_id = ?
-                ORDER BY timestamp ASC NULLS LAST, id ASC
+                ORDER BY relevant_timestamp ASC NULLS LAST, recorded_timestamp ASC, id ASC
             """, (user_id, guild_id))
         return CUR.fetchall()
 
-def _add_reminder(user_id: int, guild_id: int, description: str, context_url: Union[str, type(None)], timestamp: Union[int, type(None)]):
+def _add_reminder(user_id: int, guild_id: int, description: str, context_url: Union[str, type(None)], relevant_timestamp: Union[int, type(None)]):
     with CONN_LOCK:
         with CONN:
-            CUR.execute("""INSERT INTO reminders(user_id, guild_id, description, context_url, timestamp)
-                VALUES(?, ?, ?, ?, ?)
-            """, (user_id, guild_id, description, context_url, timestamp,))
+            CUR.execute("""INSERT INTO reminders(user_id, guild_id, recorded_timestamp, description, context_url, relevant_timestamp)
+                VALUES(?, ?, ?, ?, ?, ?)
+            """, (user_id, guild_id, int(time.time()), description, context_url, relevant_timestamp,))
 
 def _delete_reminders(user_id: int, guild_id: int, reminder_ids: Iterable):
     parsed_reminder_ids = []
@@ -90,16 +92,29 @@ def _prepare_reminders(user_id: int, guild_id: int, filter_text: Union[str, type
     if filter_text is not None:
         filter_text = filter_text.lower()
         
-    for (i, (_, description, context_url, timestamp)) in enumerate(_enumerate_reminders(user_id, guild_id)):
+    for (i, (_, recorded_timestamp, description, context_url, relevant_timestamp)) in enumerate(_enumerate_reminders(user_id, guild_id)):
         if filter_text is not None: #filtering is done here to ensure the reminder-ID is usable for deletion
             if filter_text not in description.lower():
                 continue
                 
-        new_chunk = "{}) {}\n".format(i + 1, description) #1-indexed
-        if timestamp is not None:
-            new_chunk += "> Relevant {}\n".format(humanize.naturaltime(
-                datetime.datetime.now() - datetime.datetime.fromtimestamp(timestamp),
-            ))
+        current_time = datetime.datetime.now()
+        new_chunk = "{}) {}\n> Recorded {}".format(
+            i + 1, #1-indexed
+            description,
+            humanize.naturaltime(
+                current_time - datetime.datetime.fromtimestamp(recorded_timestamp),
+            ),
+        )
+        
+        if relevant_timestamp is not None:
+            new_chunk += "; relevant {}\n".format(
+                humanize.naturaltime(
+                    datetime.datetime.now() - datetime.datetime.fromtimestamp(relevant_timestamp),
+                ),
+            )
+        else:
+            new_chunk += '\n'
+            
         if context_url is not None:
             new_chunk += "> <{}>\n".format(context_url)
             
@@ -130,7 +145,7 @@ def _parse_reminder(reminder: str):
             )
             
             if parsed_timestamp is not None:
-                timestamp = parsed_timestamp.timestamp()
+                timestamp = int(parsed_timestamp.timestamp())
                 description = sliced_description
                 break
     else:
@@ -160,7 +175,7 @@ async def handle_message(_: discord.Client, message: discord.message):
             for reminder in reminders:
                 await message.reply(reminder)
         else:
-            await message.reply("There are no relevant reminders to display")
+            await message.reply("There are no relevant reminders to display.")
             
         return True
         
