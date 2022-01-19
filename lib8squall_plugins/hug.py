@@ -44,17 +44,14 @@ INITIAL_HUGS: List = [
 CONN_LOCK: threading.Lock = threading.Lock()
 CONN: sqlite3.Connection = sqlite3.connect("./hugs.sqlite3", check_same_thread=False)
 CUR: sqlite3.Cursor = CONN.cursor()
-CUR.execute(
-    """
-CREATE TABLE IF NOT EXISTS hugs(
-    id INTEGER NOT NULL,
-    submitter INTEGER DEFAULT NULL,
-    url TEXT NOT NULL,
-    PRIMARY KEY(id),
-    UNIQUE(url)
-)
-"""
-)
+with CONN:
+    CUR.execute("""CREATE TABLE IF NOT EXISTS hugs(
+        id INTEGER NOT NULL,
+        submitter INTEGER DEFAULT NULL,
+        url TEXT NOT NULL,
+        PRIMARY KEY(id),
+        UNIQUE(url)
+    )""")
 
 
 def _insert_hugs(user_id: int, urls: Iterable):
