@@ -28,16 +28,23 @@ def get_help_summary(client: discord.Client, message: discord.message):
 CONN_LOCK: threading.Lock = threading.Lock()
 CONN: sqlite3.Connection = sqlite3.connect("./reminders.sqlite3", check_same_thread=False)
 CUR: sqlite3.Cursor = CONN.cursor()
-CUR.execute("""CREATE TABLE IF NOT EXISTS reminders(
-    id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    guild_id INTEGER,
-    recorded_timestamp INTEGER NOT NULL,
-    description TEXT NOT NULL,
-    context_url TEXT,
-    relevant_timestamp INTEGER,
-    PRIMARY KEY(id)
-)""")
+with CONN:
+    CUR.execute("""CREATE TABLE IF NOT EXISTS reminders(
+        id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        guild_id INTEGER,
+        recorded_timestamp INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        context_url TEXT,
+        relevant_timestamp INTEGER,
+        PRIMARY KEY(id)
+    )""")
+    CUR.execute("""CREATE INDEX IF NOT EXISTS reminders_idx ON reminders(
+        user_id,
+        guild_id
+    )""")
+
+
 
 def _enumerate_reminders(user_id: int, guild_id: int):
     with CONN_LOCK:
