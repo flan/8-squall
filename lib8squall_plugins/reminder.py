@@ -8,7 +8,6 @@ from typing import Iterable, List, Union
 
 import discord
 import dateparser
-import humanize
 import validators
 
 
@@ -104,20 +103,15 @@ def _prepare_reminders(user_id: int, guild_id: int, filter_text: Union[str, type
             if filter_text not in description.lower():
                 continue
                 
-        current_time = datetime.datetime.now()
-        new_chunk = "{}) {}\n> Recorded {}".format(
+        new_chunk = "{}) {}\n> Recorded <t:{}:R>".format(
             i + 1, #1-indexed
             description,
-            humanize.naturaltime(
-                current_time - datetime.datetime.fromtimestamp(recorded_timestamp),
-            ),
+            recorded_timestamp,
         )
         
         if relevant_timestamp is not None:
-            new_chunk += "; relevant {}\n".format(
-                humanize.naturaltime(
-                    datetime.datetime.now() - datetime.datetime.fromtimestamp(relevant_timestamp),
-                ),
+            new_chunk += "; relevant <t:{}:R>\n".format(
+                relevant_timestamp,
             )
         else:
             new_chunk += '\n'
