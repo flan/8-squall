@@ -69,18 +69,19 @@ def handle_timezone_delta(target, timezone_mismatch):
         delta = target_time - current_time
         
     if not value_in_past:
-        response_core = "{} is {} from now".format(
+        response = "{} is {} from now".format(
             common.format_timestamp(target),
             _format_delta(delta),
         )
     else:
-        response_core = "{} was {} ago".format(
+        response = "{} was {} ago".format(
             common.format_timestamp(target),
             _format_delta(delta),
         )
         
-    return "{}{}".format(
-        response_core,
-        timezone_mismatch and "; your requested timezone was corrected for current DST" or "",
-    )
+    if timezone_mismatch:
+        response += " (corrected for current DST)"
+        
+    response += "\nThis is <t:{}:t> local time".format(int(target_time))
     
+    return response
