@@ -23,11 +23,15 @@ CREATE TABLE IF NOT EXISTS tyuo_access(
 )
 """)
 
+_ChannelContext = collections.namedtuple('ChannelContext', ['id', 'responding', 'learning'])
 CHANNEL_IDS_TO_CONTEXTS = {}
-for (context, channel_ids) in json.load(open("./tyuo-access.json")).items():
-    for channel_id in channel_ids:
-        CHANNEL_IDS_TO_CONTEXTS[channel_id] = context
-        
+for (context, channels_details) in json.load(open("./tyuo-access.json")).items():
+    for channel_details in channels_details:
+        CHANNEL_IDS_TO_CONTEXTS[channel_details['id']] = _ChannelContext(
+            context,
+            channel_details.get('responding', True),
+            channel_details.get('learning', False),
+        )
         
 def _query_permission(guild_id, user_id):
     with CONN_LOCK:
@@ -100,6 +104,9 @@ async def handle_message(client, message):
                 
             return True
         elif client.user in message.mentions: #speak request
+            if not context.responding:
+                return False
+                
             debug_display = False
             if ' --debug' in message.content:
                 c = message.content.replace(' --debug', '')
@@ -114,7 +121,7 @@ async def handle_message(client, message):
             try:
                 r = requests.post('http://localhost:48100/speak',
                     json={
-                        "ContextId": context,
+                        "ContextId": context.id,
                         "Input": c,
                     },
                     timeout=5.0,
@@ -148,14 +155,14 @@ async def handle_message(client, message):
                         await message.reply("I don't know enough to respond; talk to others around me so I can learn.")
                         
             return True
-        else: #learning opportunity
+        elif context.learning: #learning opportunity
             if _query_permission(guild_id, user_id):
                 if len(message.content.split()) >= 5:
                     if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
                         lines = [i.strip() for i in message.content.splitlines()]
                         requests.post('http://localhost:48100/learn',
                             json={
-                                "ContextId": context,
+                                "ContextId": context.id,
                                 "Input": [i for i in lines if i],
                             },
                             timeout=5.0,
