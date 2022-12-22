@@ -643,7 +643,7 @@ def _convertRPN(tokens):
     """
     rpn_tokens = []
     stack = []
-    sum = 0
+    
     for i in tokens:
         if not i in _OPERATORS:
             rpn_tokens.append(i)
@@ -662,6 +662,8 @@ def _convertRPN(tokens):
                         
                 if not match_found:
                     raise UnbalancedParenthesesError(tokens)
+            elif i == '^': #exponent-side value needs to be resolved first
+                stack.append(i)
             else:
                 while stack:
                     if _OPERATOR_PRECEDENCE[i] <= _OPERATOR_PRECEDENCE[stack[-1]]:
@@ -680,7 +682,7 @@ def _convertRPN(tokens):
     
 def _evaluateRPN(tokens, call_stack):
     """
-    This function evaluates an RPN-i-fied expression.
+    This function evaluates an RPN-ified expression.
     
     Each factor in the token stack is individually evaluated to ensure that
     function and variable values are computed only when needed.
