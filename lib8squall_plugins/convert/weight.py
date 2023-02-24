@@ -86,11 +86,13 @@ ENCODERS['Pounds'] = _to_pounds
 
 def _from_tons(quantity):
     return (quantity * 907184.74, 't')
+DECODERS['T'] = _from_tons
 DECODERS['Ton'] = _from_tons
 DECODERS['Tons'] = _from_tons
 
 def _to_tons(intermediate):
     return (intermediate * 1.102311310924388e-06, 't')
+ENCODERS['T'] = _to_tons
 ENCODERS['Ton'] = _to_tons
 ENCODERS['Tons'] = _to_tons
 
