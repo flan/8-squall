@@ -15,7 +15,7 @@ CURRENCIES = {currency.code: currency for currency in (
     _Currency('CNY', '¥'),
     _Currency('CZK', ''),
     _Currency('DKK', ''),
-    _Currency('DOGE', '🚀'),
+#    _Currency('DOGE', '🚀'),
     _Currency('EUR', '€'),
     _Currency('GBP', '£'),
     _Currency('HKD', '$'),
