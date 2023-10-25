@@ -35,6 +35,13 @@ _PLUGINS = tuple(_PluginSpec(
 class Magic8Squall(discord.Client):
     __user_notifaction_token_re = None
     
+    def __init__(self):
+        intents = discord.Intents(
+            messages=True,
+            message_content=True,
+        )
+        discord.Client.__init__(self, intents=intents)
+    
     def _format_help_response(self, header, summaries):
         chunks = []
         
