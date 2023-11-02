@@ -39,6 +39,7 @@ class Magic8Squall(discord.Client):
         intents = discord.Intents(
             messages=True,
             message_content=True,
+            reactions=True,
         )
         discord.Client.__init__(self, intents=intents)
     
