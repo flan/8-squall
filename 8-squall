@@ -37,6 +37,7 @@ class Magic8Squall(discord.Client):
     
     def __init__(self):
         intents = discord.Intents(
+            guilds=True,
             messages=True,
             message_content=True,
             reactions=True,
