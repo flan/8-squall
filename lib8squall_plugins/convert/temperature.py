@@ -16,12 +16,12 @@ ENCODERS['Celsius'] = _from_celsius
 
 
 def _from_kelvin(quantity):
-    return (quantity + 273.15, '°K')
+    return (quantity - 273.15, '°K')
 DECODERS['K'] = _from_kelvin
 DECODERS['Kelvin'] = _from_kelvin
 
 def _to_kelvin(intermediate):
-    return (intermediate - 273.15, '°K')
+    return (intermediate + 273.15, '°K')
 ENCODERS['K'] = _to_kelvin
 ENCODERS['Kelvin'] = _to_kelvin
 
