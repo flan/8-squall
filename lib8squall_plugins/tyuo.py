@@ -117,7 +117,7 @@ async def _llm_augment(tyuo_content, prompt, context):
             ],
             "reasoning": {
                 "effort": "low",
-                "exclude": true
+                "exclude": True
             },
         },
     )
