@@ -21,11 +21,10 @@ _LLM_HEADERS = {
 }
 
 async def _translate(simple, content):
-    response = requests.request(
-        "POST",
-        _LLM_URL,
+    response = requests.post(
+        _LLM_URL + "/v1/chat/completions",
         headers=_LLM_HEADERS,
-        params={
+        data={
             "messages": [
                 {
                     "role": "user",

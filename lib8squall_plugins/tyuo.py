@@ -96,18 +96,17 @@ async def _llm_augment(tyuo_content, prompt, context):
     else:
         context=''
 
-    response = requests.request(
-        "POST",
-        _LLM_URL,
+    response = requests.post(
+        _LLM_URL + "/v1/chat/completions",
         headers=_LLM_HEADERS,
-        params={
+        data={
             "messages": [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": "Provide a tangential response that incorporates the following idea: {tyuo_content}{context}".format(
+                            "text": "Provide a brief, one-to-two-sentence conversational response that incorporates the following idea: {tyuo_content}{context}".format(
                                 tyuo_content=tyuo_content,
                                 context=context,
                             ),
@@ -118,7 +117,10 @@ async def _llm_augment(tyuo_content, prompt, context):
         },
     )
 
-    return response.json()['choices'][0]['message']['content']
+    output = response.json()['choices'][0]['message']['content']
+    if '</think>' in output:
+        output = output.rsplit('</think>', 1)[1].strip()
+    return output
 
 async def handle_message(client, message):
     if message.channel.type != discord.ChannelType.text:
