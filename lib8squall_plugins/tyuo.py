@@ -91,22 +91,23 @@ def get_help_summary(client, message):
 async def _llm_augment(tyuo_content, prompt, context):
     if context:
         context = "Use these messages to inform context:\n\n{context}".format(
-            context='\n\n\n'.join(context),
+            context='\n\n---\n\n'.join(context),
         )
     else:
         context=''
 
     response = requests.post(
         _LLM_URL + "/v1/chat/completions",
-        headers=_LLM_HEADERS,
-        data={
+        headers=_LLM_HEADERS, 
+        json={
             "messages": [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": "Provide a brief, one-to-two-sentence conversational response that incorporates the following idea: {tyuo_content}{context}".format(
+                            "text": "Provide a brief, one-to-two-sentence tangential comment to the following query:\n\n{prompt}\n\n---\n\nIncorporate the following idea:\n\n{tyuo_content}{context}".format(
+                                prompt=prompt,
                                 tyuo_content=tyuo_content,
                                 context=context,
                             ),
