@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS tyuo_access(
 )
 """)
 
+_LLM_PARAMETERS = json.load(open("./llm-tyuo.json"))
+_LLM_URL = _LLM_PARAMETERS['url']
+_LLM_HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer no-key",
+}
+
+_CHANNEL_BUFFERS = collections.defaultdict(lambda : collections.deque(maxlen=5))
+_CHANNEL_BUFFERS_LOCK = threading.Lock()
+
 _ChannelContext = collections.namedtuple('ChannelContext', ['id', 'responding', 'learning'])
 CHANNEL_IDS_TO_CONTEXTS = {}
 for (context, channels_details) in json.load(open("./tyuo-access.json")).items():
@@ -77,8 +87,39 @@ def get_help_summary(client, message):
                 summary,
             )
     return None
-    
-    
+
+async def _llm_augment(tyuo_content, prompt, context):
+    if context:
+        context = "Use these messages to inform context:\n\n{context}".format(
+            context='\n\n\n'.join(context),
+        )
+    else:
+        context=''
+
+    response = requests.request(
+        "POST",
+        _LLM_URL,
+        headers=_LLM_HEADERS,
+        params={
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Provide a tangential response that incorporates the following idea: {tyuo_content}{context}".format(
+                                tyuo_content=tyuo_content,
+                                context=context,
+                            ),
+                        }
+                    ]
+                }
+            ]
+        },
+    )
+
+    return response.json()['choices'][0]['message']['content']
+
 async def handle_message(client, message):
     if message.channel.type != discord.ChannelType.text:
         return False
@@ -107,13 +148,17 @@ async def handle_message(client, message):
             if not context.responding:
                 return False
                 
+            c = message.content
+
             debug_display = False
+            llm_process = False
             if ' --debug' in message.content:
-                c = message.content.replace(' --debug', '')
+                c = c.replace(' --debug', '')
                 debug_display = True
-            else:
-                c = message.content
-                
+            if ' --llm' in message.content:
+                c = c.replace(' --llm', '')
+                llm_process = True
+
             c = DISCORD_MAGIC_TOKEN_RE.sub('', c.strip())
             if not c: #don't respond to empty pings, since these are intended to trigger help
                 return False
@@ -147,6 +192,11 @@ async def handle_message(client, message):
                         selection_pool.extend(results_by_score.get(highest_score - 1, ()))
                         utterance = random.choice(selection_pool)
                         
+                        if llm_process:
+                            with _CHANNEL_BUFFERS_LOCK:
+                                channel_history = tuple(_CHANNEL_BUFFERS[message.channel.id])
+                            utterance = await _llm_augment(utterance, c, channel_history)
+
                         await message.reply(utterance)
                 else:
                     if _query_permission(guild_id, user_id):
@@ -155,16 +205,20 @@ async def handle_message(client, message):
                         await message.reply("I don't know enough to respond; talk to others around me so I can learn.")
                         
             return True
-        elif context.learning: #learning opportunity
-            if _query_permission(guild_id, user_id):
-                if len(message.content.split()) >= 5:
-                    if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
-                        lines = [i.strip() for i in message.content.splitlines()]
-                        requests.post('http://localhost:48100/learn',
-                            json={
-                                "ContextId": context.id,
-                                "Input": [i for i in lines if i],
-                            },
-                            timeout=5.0,
-                        )
+        else:
+            if context.learning: #learning opportunity
+                if _query_permission(guild_id, user_id):
+                    if len(message.content.split()) >= 5:
+                        if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
+                            lines = [i.strip() for i in message.content.splitlines()]
+                            requests.post('http://localhost:48100/learn',
+                                json={
+                                    "ContextId": context.id,
+                                    "Input": [i for i in lines if i],
+                                },
+                                timeout=5.0,
+                            )
+
+            with _CHANNEL_BUFFERS_LOCK:
+                _CHANNEL_BUFFERS[message.channel.id].append(message.content)
     return False

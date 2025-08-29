@@ -52,7 +52,7 @@ def _format_response(response):
     return output
     
 async def handle_message(client, message):
-    for pattern in ('!udict ', '!uword ' , '!urbandict ', '!urbandictionary '):
+    for pattern in ('!udict ', '!uword ', '!urbandict ', '!urbandictionary '):
         if message.content.startswith(pattern):
             subject = message.content[len(pattern):].strip()
             if subject:
