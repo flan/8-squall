@@ -35,22 +35,22 @@ async def _translate(simple, content):
                                 content=content,
                                 scope=(simple and " without adding any commentary or explanations" or ", explaining sub-phrases"),
                             ),
-                        }
-                    ]
-                }
-            ]
+                        },
+                    ],
+                },
+            ],
         },
     )
 
     return response.json()['choices'][0]['message']['content']
 
 async def handle_message(client, message):
-    for pattern in ('!tr ', '!translate '):
+    for pattern in ('!tr ', '!tr\n', '!translate ', '!translate\n'):
         if message.content.startswith(pattern):
             subject = message.content[len(pattern):].strip()
             if subject:
                 try:
-                    response = await _translate(pattern == '!tr ', subject)
+                    response = await _translate(pattern in ('!tr ', '!tr\n'), subject)
                     if response:
                         await message.reply(response)
                     else:
