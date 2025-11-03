@@ -31,7 +31,7 @@ _LLM_HEADERS = {
 }
 _LLM_NAME = _LLM_PARAMETERS.get("name", "8-Squall")
 _LLM_PERSONA = _LLM_PARAMETERS.get("persona", "an unhinged, self-aware chatbot")
-_LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,2,3,))
+_LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,3,3,3,3,3,4,))
 _LLM_BUFFER_SIZE = _LLM_PARAMETERS.get("buffer", 8)
 
 _LLM_CHANNEL_BUFFERS = collections.defaultdict(lambda : collections.deque(maxlen=_LLM_BUFFER_SIZE)) #entries are ("user"|"assistant", message)
