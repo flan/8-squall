@@ -42,7 +42,7 @@ def _record_context(channel_id, role, message):
 def _gather_context(channel_id):
     output = []
     with _LLM_CHANNEL_BUFFERS_LOCK:
-        output.extend(_LLM_CHANNEL_BUFFERS[message.channel.id])
+        output.extend(_LLM_CHANNEL_BUFFERS[channel_id])
     return output
 
 _ChannelContext = collections.namedtuple('ChannelContext', ['id', 'responding', 'learning'])
@@ -101,13 +101,6 @@ def get_help_summary(client, message):
     return None
 
 async def _llm_augment(tyuo_content, context):
-    if context:
-        context = "Use these messages to inform context:\n\n{context}".format(
-            context='\n\n---\n\n'.join(context),
-        )
-    else:
-        context=''
-
     messages = [
         {
             "role": "system",
@@ -135,28 +128,29 @@ Do not include any links or cite any sources.""",
     } for (role, content) in context)
     
     #put the tyuo result just before the prompt
-    messages.insert(-1, (
-        {
-            "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"""Try to incorporate the following text into your response; you may reword or discard it:
+    messages.insert(-1, {
+        "role": "system",
+        "content": [
+            {
+                "type": "text",
+                "text": f"""Try to incorporate the following text into your response; you may reword or discard it:
 
 {tyuo_content}""",
-                }
-            ]
-        },
-    )
+            }
+        ]
+    })
 
     response = requests.post(
         _LLM_URL + "/v1/chat/completions",
-        headers=_LLM_HEADERS, 
+        headers=_LLM_HEADERS,
         json={
-            "messages": messages
+            "messages": messages,
             "reasoning": {
                 "effort": "low",
                 "exclude": True
+            },
+            "response_format": {
+                "type": "text",
             },
         },
     )
