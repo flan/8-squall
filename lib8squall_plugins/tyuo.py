@@ -27,11 +27,23 @@ _LLM_PARAMETERS = json.load(open("./llm-tyuo.json"))
 _LLM_URL = _LLM_PARAMETERS['url']
 _LLM_HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer no-key",
+    "Authorization": _LLM_PARAMETERS.get("auth", "Bearer no-key"),
 }
+_LLM_NAME = _LLM_PARAMETERS.get("name", "8-Squall")
+_LLM_PERSONA = _LLM_PARAMETERS.get("persona", "an unhinged, self-aware chatbot")
+_LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,2,3,))
+_LLM_BUFFER_SIZE = _LLM_PARAMETERS.get("buffer", 8)
 
-_CHANNEL_BUFFERS = collections.defaultdict(lambda : collections.deque(maxlen=5))
-_CHANNEL_BUFFERS_LOCK = threading.Lock()
+_LLM_CHANNEL_BUFFERS = collections.defaultdict(lambda : collections.deque(maxlen=_LLM_BUFFER_SIZE)) #entries are ("user"|"assistant", message)
+_LLM_CHANNEL_BUFFERS_LOCK = threading.Lock()
+def _record_context(channel_id, role, message):
+    with _LLM_CHANNEL_BUFFERS_LOCK:
+        _LLM_CHANNEL_BUFFERS[channel_id].append((role, message))
+def _gather_context(channel_id):
+    output = []
+    with _LLM_CHANNEL_BUFFERS_LOCK:
+        output.extend(_LLM_CHANNEL_BUFFERS[message.channel.id])
+    return output
 
 _ChannelContext = collections.namedtuple('ChannelContext', ['id', 'responding', 'learning'])
 CHANNEL_IDS_TO_CONTEXTS = {}
@@ -88,7 +100,7 @@ def get_help_summary(client, message):
             )
     return None
 
-async def _llm_augment(tyuo_content, prompt, context):
+async def _llm_augment(tyuo_content, context):
     if context:
         context = "Use these messages to inform context:\n\n{context}".format(
             context='\n\n---\n\n'.join(context),
@@ -96,25 +108,52 @@ async def _llm_augment(tyuo_content, prompt, context):
     else:
         context=''
 
+    messages = [
+        {
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"""You are {_LLM_NAME}, {_LLM_PERSONA}.
+
+Provide a {random.choice(_LLM_SENTENCE_COUNTS)}-sentence tangential comment in a conversational tone.
+
+Do not include any links or cite any sources.""",
+                }
+            ]
+        },
+    ]
+
+    messages.extend({
+        "role": role,
+        "content": [
+            {
+                "type": "text",
+                "text": content,
+            }
+        ]
+    } for (role, content) in context)
+    
+    #put the tyuo result just before the prompt
+    messages.insert(-1, (
+        {
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"""Try to incorporate the following text into your response; you may reword or discard it:
+
+{tyuo_content}""",
+                }
+            ]
+        },
+    )
+
     response = requests.post(
         _LLM_URL + "/v1/chat/completions",
         headers=_LLM_HEADERS, 
         json={
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Provide a brief, one-to-two-sentence tangential comment to the following query:\n\n{prompt}\n\n---\n\nIncorporate the following idea:\n\n{tyuo_content}{context}".format(
-                                prompt=prompt,
-                                tyuo_content=tyuo_content,
-                                context=context,
-                            ),
-                        }
-                    ]
-                }
-            ],
+            "messages": messages
             "reasoning": {
                 "effort": "low",
                 "exclude": True
@@ -170,6 +209,8 @@ async def handle_message(client, message):
             if not c: #don't respond to empty pings, since these are intended to trigger help
                 return False
                 
+            _record_context(message.channel.id, "user", c)
+
             try:
                 r = requests.post('http://localhost:48100/speak',
                     json={
@@ -200,9 +241,9 @@ async def handle_message(client, message):
                         utterance = random.choice(selection_pool)
                         
                         if llm_process:
-                            with _CHANNEL_BUFFERS_LOCK:
-                                channel_history = tuple(_CHANNEL_BUFFERS[message.channel.id])
-                            utterance = await _llm_augment(utterance, c, channel_history)
+                            utterance = await _llm_augment(utterance, _gather_context(message.channel.id))
+
+                        _record_context(message.channel.id, "assistant", utterance)
 
                         await message.reply(utterance)
                 else:
@@ -213,6 +254,8 @@ async def handle_message(client, message):
                         
             return True
         else:
+            _record_context(message.channel.id, "user", message.content)
+
             if context.learning: #learning opportunity
                 if _query_permission(guild_id, user_id):
                     if len(message.content.split()) >= 5:
@@ -225,7 +268,4 @@ async def handle_message(client, message):
                                 },
                                 timeout=5.0,
                             )
-
-            with _CHANNEL_BUFFERS_LOCK:
-                _CHANNEL_BUFFERS[message.channel.id].append(message.content)
     return False
