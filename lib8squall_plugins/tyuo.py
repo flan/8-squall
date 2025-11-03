@@ -192,11 +192,11 @@ async def handle_message(client, message):
 
             debug_display = False
             llm_process = False
-            if ' --debug' in message.content:
-                c = c.replace(' --debug', '')
+            if ' -debug' in message.content:
+                c = c.replace(' -debug', '')
                 debug_display = True
-            if ' --llm' in message.content:
-                c = c.replace(' --llm', '')
+            if ' -llm' in message.content:
+                c = c.replace(' -llm', '')
                 llm_process = True
 
             c = DISCORD_MAGIC_TOKEN_RE.sub('', c.strip())
