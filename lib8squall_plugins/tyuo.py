@@ -129,7 +129,7 @@ Do not include any links or cite any sources.""",
     
     #put the tyuo result just before the prompt
     messages.insert(-1, {
-        "role": "system",
+        "role": "developer",
         "content": [
             {
                 "type": "text",
