@@ -15,16 +15,18 @@ def get_help_summary(client, message):
 
 _LLM_PARAMETERS = json.load(open("./llm-translate.json"))
 _LLM_URL = _LLM_PARAMETERS['url']
+_LLM_MODEL = _LLM_PARAMETERS['model']
 _LLM_HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer no-key",
+    "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
 
 async def _translate(simple, content):
     response = requests.post(
-        _LLM_URL + "/v1/chat/completions",
+        _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
         data={
+            "model": _LLM_MODEL,
             "messages": [
                 {
                     "role": "user",
