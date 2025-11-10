@@ -25,9 +25,10 @@ CREATE TABLE IF NOT EXISTS tyuo_access(
 
 _LLM_PARAMETERS = json.load(open("./llm-tyuo.json"))
 _LLM_URL = _LLM_PARAMETERS['url']
+_LLM_MODEL = _LLM_PARAMETERS['model']
 _LLM_HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": _LLM_PARAMETERS.get("auth", "Bearer no-key"),
+    "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
 _LLM_NAME = _LLM_PARAMETERS.get("name", "8-Squall")
 _LLM_PERSONA = _LLM_PARAMETERS.get("persona", "an unhinged, self-aware chatbot")
@@ -141,9 +142,10 @@ Do not include any links or cite any sources.""",
     })
 
     response = requests.post(
-        _LLM_URL + "/v1/chat/completions",
+        _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
         json={
+            "model": _LLM_MODEL,
             "messages": messages,
             "reasoning": {
                 "effort": "low",
