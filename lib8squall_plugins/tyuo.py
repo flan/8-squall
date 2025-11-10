@@ -208,14 +208,15 @@ async def handle_message(client, message):
             _record_context(message.channel.id, "user", c)
 
             try:
-                r = requests.post('http://localhost:48100/speak',
-                    json={
-                        "ContextId": context.id,
-                        "Input": c,
-                    },
-                    timeout=5.0,
-                )
-                results = r.json()
+                async with message.channel.typing():
+                    r = requests.post('http://localhost:48100/speak',
+                        json={
+                            "ContextId": context.id,
+                            "Input": c,
+                        },
+                        timeout=5.0,
+                    )
+                    results = r.json()
             except Exception:
                 await message.reply("Something went wrong. The chatbot might be down.")
                 raise
@@ -237,7 +238,8 @@ async def handle_message(client, message):
                         utterance = random.choice(selection_pool)
                         
                         if llm_process:
-                            utterance = await _llm_augment(utterance, _gather_context(message.channel.id))
+                            async with message.channel.typing():
+                                utterance = await _llm_augment(utterance, _gather_context(message.channel.id))
 
                         _record_context(message.channel.id, "assistant", utterance)
 

@@ -52,11 +52,12 @@ async def handle_message(client, message):
             subject = message.content[len(pattern):].strip()
             if subject:
                 try:
-                    response = await _translate(pattern in ('!tr ', '!tr\n'), subject)
-                    if response:
-                        await message.reply(response)
-                    else:
-                        await message.reply("Unable to translate.")
+                    async with message.channel.typing():
+                        response = await _translate(pattern in ('!tr ', '!tr\n'), subject)
+                        if response:
+                            await message.reply(response)
+                        else:
+                            await message.reply("Unable to translate.")
                 except Exception:
                     await message.reply("Something didn't go quite right.")
                     raise
