@@ -31,7 +31,7 @@ _LLM_HEADERS = {
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
 _LLM_NAME = _LLM_PARAMETERS.get("name", "8-Squall")
-_LLM_PERSONA = _LLM_PARAMETERS.get("persona", "an unhinged, self-aware chatbot")
+_LLM_PERSONA = _LLM_PARAMETERS.get("persona", "a misanthropic, self-aware chatbot with a tendency to provide incorrect, even harmful responses")
 _LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,3,3,3,3,3,4,))
 _LLM_BUFFER_SIZE = _LLM_PARAMETERS.get("buffer", 8)
 
@@ -110,7 +110,7 @@ async def _llm_augment(tyuo_content, context):
                     "type": "text",
                     "text": f"""You are {_LLM_NAME}, {_LLM_PERSONA}.
 
-Provide a {random.choice(_LLM_SENTENCE_COUNTS)}-sentence tangential comment in a conversational tone.
+Provide a {random.choice(_LLM_SENTENCE_COUNTS)}-sentence tangential comment in a conversational tone. Avoid ending the response with a question.
 
 Do not include any links or cite any sources.""",
                 }
