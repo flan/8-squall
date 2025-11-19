@@ -46,6 +46,7 @@ _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [
   },
 ])
 _LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,3,3,3,3,3,4,))
+_LLM_TOKEN_TARGET = _LLM_PARAMETERS.get("tokenTarget", 7800) #should be a little below what the provider supports
 _LLM_BUFFER_SIZE = _LLM_PARAMETERS.get("buffer", 8)
 
 _LLM_CHANNEL_BUFFERS = collections.defaultdict(lambda : collections.deque(maxlen=_LLM_BUFFER_SIZE)) #entries are ("user"|"assistant", message)
@@ -159,15 +160,21 @@ Do not include any links or cite any sources.""",
         ]
     })
 
+    consumed_tokens = 0 #very conservative, lazy estimate
+    for message in messages:
+        consumed_tokens += int(len(json.dumps(message, separators=(',', ':'))) / 3)
+    
     response = requests.post(
         _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
         json={
             "model": _LLM_MODEL,
+            "max_tokens": _LLM_TOKEN_TARGET - consumed_tokens,
+            "max_completion_tokens": _LLM_TOKEN_TARGET - consumed_tokens,
             "messages": messages,
             "reasoning": {
                 "effort": "low",
-                "exclude": True
+                "exclude": True,
             },
             "response_format": {
                 "type": "text",
@@ -263,7 +270,7 @@ async def handle_message(client, message):
                                     try:
                                         utterance = await _llm_augment(utterance, _gather_context(message.channel.id))
                                     except Exception as e:
-                                        await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
+                                        #await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
                                         exception_event = e
                                     else:
                                         break
