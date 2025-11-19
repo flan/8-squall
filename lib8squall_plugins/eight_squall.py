@@ -40,13 +40,13 @@ _RESPONSES_8BALL = (
 
 async def handle_message(client, message):
     if message.content.startswith(('!8ball ', '!8-ball ', '!8ball, ', '!8-ball, ')):
-        await message.reply(random.choice(_RESPONSES_8BALL))
+        await message.reply(random.choice(_RESPONSES_8BALL), mention_author=False)
         return True
     if message.content.startswith(('!8squall ', '!8-squall ', '!8-Squall ', '!8squall, ', '!8-squall, ', '!8-Squall, ')):
         if random.randint(0, 2) == 2: #33% chance of getting Squall
             response = random.choice(_RESPONSES_8SQUALL)
         else:
             response = "The 8-Ball has concluded: {}".format(random.choice(_RESPONSES_8BALL))
-        await message.reply(response)
+        await message.reply(response, mention_author=False)
         return True
     return False

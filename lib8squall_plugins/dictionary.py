@@ -38,13 +38,13 @@ async def handle_message(client, message):
                 try:
                     response = _get_merriam_webster(subject.split()[0].lower())
                     if response:
-                        await message.reply('\n'.join(_format_response(response)))
+                        await message.reply('\n'.join(_format_response(response)), mention_author=False)
                     else:
-                        await message.reply("No definitions were found.")
+                        await message.reply("No definitions were found.", mention_author=False)
                 except mw.WordNotFoundException as e:
-                    await message.reply(str(e))
+                    await message.reply(str(e), mention_author=False)
                 except Exception:
-                    await message.reply("Something didn't go quite right.")
+                    await message.reply("Something didn't go quite right.", mention_author=False)
                     raise
             return True
     return False

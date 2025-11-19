@@ -20,11 +20,11 @@ async def handle_message(client, message):
         if query_match:
             cur1 = currencies.get_currency(query_match.group('cur1'))
             if not cur1:
-                await message.reply("{} is not a supported currency.".format(query_match.group('cur1').upper()))
+                await message.reply("{} is not a supported currency.".format(query_match.group('cur1').upper()), mention_author=False)
                 return True
             cur2 = currencies.get_currency(query_match.group('cur2'))
             if not cur2:
-                await message.reply("{} is not a supported currency.".format(query_match.group('cur2').upper()))
+                await message.reply("{} is not a supported currency.".format(query_match.group('cur2').upper()), mention_author=False)
                 return True
                 
             quantity = query_match.group('qty')
@@ -36,7 +36,7 @@ async def handle_message(client, message):
             try:
                 current_rate = rates.get_rates(cur1)[cur2]
             except Exception:
-                await message.reply("Unable to fetch current currency data; please try again later.")
+                await message.reply("Unable to fetch current currency data; please try again later.", mention_author=False)
                 raise
             else:
                 await message.reply("{symbol1}{base:,.2f} {code1} = {symbol2}{rate:,.2f} {code2}\n{symbol2}{base:,.2f} {code2} = {symbol1}{inverted_rate:,.2f} {code1}".format(
@@ -47,6 +47,6 @@ async def handle_message(client, message):
                     base=quantity,
                     rate=(quantity * current_rate),
                     inverted_rate=(quantity / current_rate),
-                ))
+                ), mention_author=False)
         return True
     return False

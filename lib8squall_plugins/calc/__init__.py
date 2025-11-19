@@ -38,14 +38,14 @@ async def handle_message(client, message):
                 output = []
                 output.extend("- `{} = {}`".format(name, _try_int(value)) for (name, value) in variables)
                 output.extend("`{}` = `{}`".format(equation, _try_int(value)) for (equation, value) in equations)
-                await message.reply('\n'.join(output))
+                await message.reply('\n'.join(output), mention_author=False)
             else:
-                await message.reply("No expressions provided.")
+                await message.reply("No expressions provided.", mention_author=False)
         except Exception as e:
             await message.reply("Something went wrong. {}: {}".format(
                 e.__class__.__name__,
                 e,
-            ))
+            ), mention_author=False)
             raise
         return True
     return False

@@ -31,7 +31,20 @@ _LLM_HEADERS = {
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
 _LLM_NAME = _LLM_PARAMETERS.get("name", "8-Squall")
-_LLM_PERSONA = _LLM_PARAMETERS.get("persona", "a misanthropic, self-aware chatbot with a tendency to provide incorrect, even harmful responses")
+_LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [  
+  {
+    "weight": 100,
+    "personality": "a cheerful, agreeable assistant with a desire to maximize happiness and minimize harm; you are incapable of being rude or lying; your responses are always extremely polite",
+  },
+  {
+    "weight": 50,
+    "personality": "an unfeeling office-drone with a bland personality; you are receptive to and attempt to fulfill requests; your responses avoid superfluous language and end with the phrase \"End of conversation.\"",
+  },
+  {
+    "weight": 25,
+    "personality": "a rude, immature assistant with an overbearing attitude; you will reluctantly do as the user asks; your response sometimes includes or ends with a childish insult",
+  },
+])
 _LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,3,3,3,3,3,4,))
 _LLM_BUFFER_SIZE = _LLM_PARAMETERS.get("buffer", 8)
 
@@ -102,15 +115,20 @@ def get_help_summary(client, message):
     return None
 
 async def _llm_augment(tyuo_content, context):
+    personas = []
+    for persona_details in _LLM_PERSONAS:
+        for i in range(persona_details['weight']):
+            personas.append(persona_details['personality'])
+
     messages = [
         {
             "role": "system",
             "content": [
                 {
                     "type": "text",
-                    "text": f"""You are {_LLM_NAME}, {_LLM_PERSONA}.
+                    "text": f"""You are {_LLM_NAME}, {random.choice(personas)}.
 
-Provide a {random.choice(_LLM_SENTENCE_COUNTS)}-sentence tangential comment in a conversational tone. Avoid ending the response with a question.
+Provide a {random.choice(_LLM_SENTENCE_COUNTS)}-sentence tangential comment. Avoid ending the response with a question.
 
 Do not include any links or cite any sources.""",
                 }
@@ -175,15 +193,15 @@ async def handle_message(client, message):
             content = message.content[6:]
             if content == 'status':
                 if _query_permission(guild_id, user_id):
-                    await message.reply("You are currently teaching the chatbot on this server. Thank you!\nIf you want to stop, use `!tyuo disable`.")
+                    await message.reply("You are currently teaching the chatbot on this server. Thank you!\nIf you want to stop, use `!tyuo disable`.", mention_author=False)
                 else:
-                    await message.reply("You are not currently teaching the chatbot on this server.\nIf you want to start, use `!tyuo enable`.")
+                    await message.reply("You are not currently teaching the chatbot on this server.\nIf you want to start, use `!tyuo enable`.", mention_author=False)
             elif content == 'enable':
                 _grant_permission(guild_id, user_id)
-                await message.reply("Thank you for opting in to teaching the chatbot; use `!tyuo status` if you forget that you did this.")
+                await message.reply("Thank you for opting in to teaching the chatbot; use `!tyuo status` if you forget that you did this.", mention_author=False)
             elif content == 'disable':
                 _revoke_permission(guild_id, user_id)
-                await message.reply("Done. You're no longer teaching the chatbot; use `!tyuo status` if you forget that you did this.")
+                await message.reply("Done. You're no longer teaching the chatbot; use `!tyuo status` if you forget that you did this.", mention_author=False)
                 
             return True
         elif client.user in message.mentions: #speak request
@@ -218,14 +236,14 @@ async def handle_message(client, message):
                     )
                     results = r.json()
             except Exception:
-                await message.reply("Something went wrong. The chatbot might be down.")
+                await message.reply("Something went wrong. The chatbot might be down.", mention_author=False)
                 raise
             else:
                 if results:
                     if debug_display:
                         await message.reply("""```javascript
 {}
-```""".format(json.dumps(["{:.2f}: {}".format(r['Score'], r['Utterance']) for r in results], indent=2)))
+```""".format(json.dumps(["{:.2f}: {}".format(r['Score'], r['Utterance']) for r in results], indent=2)), mention_author=False)
                     else:
                         results_by_score = collections.defaultdict(list)
                         for result in results:
@@ -239,16 +257,28 @@ async def handle_message(client, message):
                         
                         if llm_process:
                             async with message.channel.typing():
-                                utterance = await _llm_augment(utterance, _gather_context(message.channel.id))
+                                attempts = 3
+                                exception_event = None
+                                for i in range(3):
+                                    try:
+                                        utterance = await _llm_augment(utterance, _gather_context(message.channel.id))
+                                    except Exception as e:
+                                        await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
+                                        exception_event = e
+                                    else:
+                                        break
+                                else:
+                                    await message.reply("Something went wrong with the LLM layer. This is the tyuo response:\n" + utterance, mention_author=False)
+                                    raise exception_event
 
                         _record_context(message.channel.id, "assistant", utterance)
 
-                        await message.reply(utterance)
+                        await message.reply(utterance, mention_author=False)
                 else:
                     if _query_permission(guild_id, user_id):
-                        await message.reply("I don't know enough to respond; please converse in my presence so I can learn more.")
+                        await message.reply("I don't know enough to respond; please converse in my presence so I can learn more.", mention_author=False)
                     else:
-                        await message.reply("I don't know enough to respond; talk to others around me so I can learn.")
+                        await message.reply("I don't know enough to respond; talk to others around me so I can learn.", mention_author=False)
                         
             return True
         else:

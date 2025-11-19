@@ -124,13 +124,13 @@ async def handle_message(_: discord.Client, message: discord.message):
                 response = "Oh no, you had invalid URLs in there! Fix them and try again:\n  {}".format(
                     "\n  ".join(bad_urls)
                 )
-                await message.reply(response)
+                await message.reply(response, mention_author=False)
                 return True
             _insert_hugs(message.author.id, valid_urls)
             response = "I've added {} new hugs - if they weren't already there!".format(
                 len(valid_urls)
             )
-            await message.reply(response)
+            await message.reply(response, mention_author=False)
             return True
 
         if message.content.startswith("!hugdel ") and message.author.id in _HUGGERS:
@@ -139,15 +139,15 @@ async def handle_message(_: discord.Client, message: discord.message):
                 response = "Oh no, you had invalid URLs in there! Fix them and try again:\n  {}".format(
                     "\n  ".join(bad_urls)
                 )
-                await message.reply(response)
+                await message.reply(response, mention_author=False)
                 return True
             _delete_hugs(valid_urls)
             response = "I've deleted {} hugs - if they existed!".format(len(valid_urls))
-            await message.reply(response)
+            await message.reply(response, mention_author=False)
             return True
 
     if message.content.strip() == "!hug":
-        await message.reply(_get_random_hug())
+        await message.reply(_get_random_hug(), mention_author=False)
         return True
 
     return False

@@ -55,11 +55,11 @@ async def handle_message(client, message):
                     async with message.channel.typing():
                         response = await _translate(pattern in ('!tr ', '!tr\n'), subject)
                         if response:
-                            await message.reply(response)
+                            await message.reply(response, mention_author=False)
                         else:
-                            await message.reply("Unable to translate.")
+                            await message.reply("Unable to translate.", mention_author=False)
                 except Exception:
-                    await message.reply("Something didn't go quite right.")
+                    await message.reply("Something didn't go quite right.", mention_author=False)
                     raise
             return True
     return False

@@ -23,8 +23,8 @@ async def handle_message(client, message):
             choices = ()
             
         if len(choices) > 1:
-            await message.reply(random.choice(choices))
+            await message.reply(random.choice(choices), mention_author=False)
         else:
-            await message.reply("There was nothing to choose between; provide a list separated by spaces, commas, semicolons, or linebreaks.")
+            await message.reply("There was nothing to choose between; provide a list separated by spaces, commas, semicolons, or linebreaks.", mention_author=False)
         return True
     return False

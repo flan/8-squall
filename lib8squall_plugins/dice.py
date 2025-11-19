@@ -46,8 +46,8 @@ async def handle_message(client, message):
                     ))
                     
         if response:
-            await message.reply('\n'.join(response))
+            await message.reply('\n'.join(response), mention_author=False)
         else:
-            await message.reply("There were no dice-rolls to process; try something like `4d20`.")
+            await message.reply("There were no dice-rolls to process; try something like `4d20`.", mention_author=False)
         return True
     return False

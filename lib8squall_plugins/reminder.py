@@ -174,9 +174,9 @@ async def handle_message(_: discord.Client, message: discord.message):
         reminders = _prepare_reminders(message.author.id, guild_id, filter_text)
         if reminders:
             for reminder in reminders:
-                await message.reply(reminder)
+                await message.reply(reminder, mention_author=False)
         else:
-            await message.reply("There are no relevant reminders to display.")
+            await message.reply("There are no relevant reminders to display.", mention_author=False)
             
         return True
         
