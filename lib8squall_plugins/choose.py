@@ -6,7 +6,7 @@ def get_help_summary(client, message):
         "Decision-making",
         (
             "`!choose <choices>` to have one picked.",
-            "Choices may be delimited by space, comma, or semicolon, in ascending order of precedence.",
+            "Choices may be delimited by space, comma, semicolon, or linebreak, in ascending order of precedence.",
             "For example, in \"hello, world; goodbye\", the presence of a semicolon means there are two choices: \"hello, world\" and \"goodbye\"; \"pie cake\" also has two choices because space is the highest-precedence (and only) delimiter.",
         ),
     )
