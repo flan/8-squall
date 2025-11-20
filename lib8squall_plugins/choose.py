@@ -13,12 +13,12 @@ def get_help_summary(client, message):
 
 def _parse_choices(message_body):
     for delimiter in ('\n', ';', ',', ' '):
-            #see if the delimiter splits anything
-            choices = [i for i in (j.strip() for j in message_body.split(delimiter)) if i]
-            if len(choices) > 1: #found the most-significant delimiter
-                return choices
-        else:
-            return []
+        #see if the delimiter splits anything
+        choices = [i for i in (j.strip() for j in message_body.split(delimiter)) if i]
+        if len(choices) > 1: #found the most-significant delimiter
+            return choices
+    else:
+        return []
 
 async def handle_message(client, message):
     if message.content.startswith(('!choose ', '!choose\n')):
