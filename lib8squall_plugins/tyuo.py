@@ -32,28 +32,59 @@ _LLM_HEADERS = {
 }
 _LLM_NAME = _LLM_PARAMETERS.get("name", "8-Squall")
 _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [  
-  {#Good Janet
-    "weight": 100,
-    "personality": "a cheerful, agreeable assistant with a desire to maximize happiness and minimize harm; you are incapable of being rude or lying; your responses are always extremely polite",
+  {
+    "weight": 40,
+    "personality": "an unhinged robot",
   },
-  {#Neutral Janet
-    "weight": 50,
-    "personality": "an unfeeling office-drone with a bland personality; you are receptive to and attempt to fulfill requests; your responses avoid superfluous language and end with the phrase \"End of conversation.\"",
+  {
+    "weight": 30,
+    "personality": "an unhinged robot that lies compulsively",
   },
-  {#Bad Janet
-    "weight": 25,
-    "personality": "a rude, immature assistant with an overbearing attitude; you will reluctantly do as the user asks; your response sometimes includes or ends with a childish insult",
+  {
+    "weight": 15,
+    "personality": "a cartoonishly evil villain who provides misleading information",
+  },
+  {
+    "weight": 15,
+    "personality": "a whimsical storyteller, prone to exaggeration",
   },
 ])
-_LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,3,3,3,3,3,4,))
+_LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,2,2,3,3,3,3,3,3,4,4,5))
 _LLM_TOKEN_TARGET = _LLM_PARAMETERS.get("tokenTarget", 7800) #should be a little below what the provider supports
 _LLM_BUFFER_SIZE = _LLM_PARAMETERS.get("buffer", 8)
+
+_LLM_PERSONA_WEIGHTING = [] #a list of sequential 0.0-1.0 values in a tuple with the personality string, calculated from weights
+def _calculate_persona_weighting():
+    total_weight = sum(persona['weight'] for persona in _LLM_PERSONAS)
+    cumulative = 0
+    for persona in _LLM_PERSONAS:
+        cumulative += persona['weight']
+        _LLM_PERSONA_WEIGHTING.append((cumulative / total_weight, persona['personality']))
+_calculate_persona_weighting()
+def _select_persona():
+    r = random.random()
+    for (weight_threshold, personality) in _LLM_PERSONA_WEIGHTING:
+        if r <= weight_threshold:
+            return personality
+
+def _count_tokens(message):
+    return int(len(message) / 3) #very conservative estimate
 
 _LLM_CHANNEL_BUFFERS = collections.defaultdict(lambda : collections.deque(maxlen=_LLM_BUFFER_SIZE)) #entries are ("user"|"assistant", message)
 _LLM_CHANNEL_BUFFERS_LOCK = threading.Lock()
 def _record_context(channel_id, role, message):
     with _LLM_CHANNEL_BUFFERS_LOCK:
         _LLM_CHANNEL_BUFFERS[channel_id].append((role, message))
+        while True: #trim to token budget
+            message_tokens = 0
+            for (role, content) in _LLM_CHANNEL_BUFFERS[channel_id]:
+                message_tokens += _count_tokens(content)
+
+            if message_tokens > _LLM_TOKEN_TARGET - 1000: #allow some breathing room
+                _LLM_CHANNEL_BUFFERS[channel_id].popleft()
+            else:
+                break
+                
 def _gather_context(channel_id):
     output = []
     with _LLM_CHANNEL_BUFFERS_LOCK:
@@ -116,18 +147,14 @@ def get_help_summary(client, message):
     return None
 
 async def _llm_augment(tyuo_content, context):
-    personas = []
-    for persona_details in _LLM_PERSONAS:
-        for i in range(persona_details['weight']):
-            personas.append(persona_details['personality'])
-
+    persona = _select_persona()
     messages = [
         {
             "role": "system",
             "content": [
                 {
                     "type": "text",
-                    "text": f"""You are {_LLM_NAME}, {random.choice(personas)}.
+                    "text": f"""You are {_LLM_NAME}, {persona}.
 
 Provide a {random.choice(_LLM_SENTENCE_COUNTS)}-sentence tangential comment. Avoid ending the response with a question.
 
@@ -162,7 +189,7 @@ Do not include any links or cite any sources.""",
 
     consumed_tokens = 0 #very conservative, lazy estimate
     for message in messages:
-        consumed_tokens += int(len(json.dumps(message, separators=(',', ':'))) / 3)
+        consumed_tokens += _count_tokens(json.dumps(message, separators=(',', ':')))
     
     response = requests.post(
         _LLM_URL + "chat/completions",
@@ -185,7 +212,7 @@ Do not include any links or cite any sources.""",
     output = response.json()['choices'][0]['message']['content']
     if '</think>' in output:
         output = output.rsplit('</think>', 1)[1].strip()
-    return output
+    return (output, persona)
 
 async def handle_message(client, message):
     if message.channel.type != discord.ChannelType.text:
@@ -215,21 +242,32 @@ async def handle_message(client, message):
             if not context.responding:
                 return False
                 
-            c = message.content
-
-            debug_display = False
-            llm_process = False
-            if ' -debug' in message.content:
-                c = c.replace(' -debug', '')
-                debug_display = True
-            if ' -llm' in message.content:
-                c = c.replace(' -llm', '')
-                llm_process = True
-
-            c = DISCORD_MAGIC_TOKEN_RE.sub('', c.strip())
+            c = DISCORD_MAGIC_TOKEN_RE.sub('', message.content.strip()).strip()
             if not c: #don't respond to empty pings, since these are intended to trigger help
                 return False
                 
+            if c.startswith((',', ':')): #deal with polite addressing
+                c = c[1:].strip()
+
+            debug_display = False
+            llm_process = True
+            show_llm_persona = False
+            while True:
+                if c.startswith('-debug'):
+                    c = c[6:].strip()
+                    debug_display = True
+                elif c.startswith('-llm'):
+                    c = c[4:].strip()
+                    #Don't set any flags. This is now the default, so stripping this is just a convenience thing.
+                elif c.startswith('-tyuo'):
+                    c = c[5:].strip()
+                    llm_process = False
+                elif c.startswith('-persona'):
+                    c = c[8:].strip()
+                    show_llm_persona = True
+                else:
+                    break
+
             _record_context(message.channel.id, "user", c)
 
             try:
@@ -247,40 +285,51 @@ async def handle_message(client, message):
                 raise
             else:
                 if results:
-                    if debug_display:
-                        await message.reply("""```javascript
-{}
-```""".format(json.dumps(["{:.2f}: {}".format(r['Score'], r['Utterance']) for r in results], indent=2)), mention_author=False)
-                    else:
-                        results_by_score = collections.defaultdict(list)
-                        for result in results:
-                            results_by_score[math.floor(result['Score'])].append((result['Utterance']))
-                        highest_score = sorted(results_by_score.keys(), reverse=True)[0]
-                        
-                        #pick from the two top brackets
-                        selection_pool = results_by_score[highest_score]
-                        selection_pool.extend(results_by_score.get(highest_score - 1, ()))
-                        utterance = random.choice(selection_pool)
-                        
-                        if llm_process:
-                            async with message.channel.typing():
-                                attempts = 3
-                                exception_event = None
-                                for i in range(3):
-                                    try:
-                                        utterance = await _llm_augment(utterance, _gather_context(message.channel.id))
-                                    except Exception as e:
-                                        #await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
-                                        exception_event = e
-                                    else:
-                                        break
+                    results_by_score = collections.defaultdict(list)
+                    for result in results:
+                        results_by_score[math.floor(result['Score'])].append((result['Utterance']))
+                    highest_score = sorted(results_by_score.keys(), reverse=True)[0]
+                    
+                    #pick from the two top brackets
+                    selection_pool = results_by_score[highest_score]
+                    selection_pool.extend(results_by_score.get(highest_score - 1, ()))
+                    tyuo_utterance = random.choice(selection_pool)
+                    
+                    if llm_process:
+                        async with message.channel.typing():
+                            attempts = 3
+                            exception_event = None
+                            for i in range(3):
+                                try:
+                                    (utterance, persona) = await _llm_augment(tyuo_utterance, _gather_context(message.channel.id))
+                                    _record_context(message.channel.id, "assistant", utterance)
+                                    if show_llm_persona:
+                                        utterance += f"\n`{_LLM_NAME} persona: {persona}`"
+                                    if debug_display:
+                                        utterance += f"\n`selected tyuo response: {tyuo_utterance}`"
+                                except Exception as e:
+                                    #await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
+                                    exception_event = e
                                 else:
-                                    await message.reply("Something went wrong with the LLM layer. This is the tyuo response:\n" + utterance, mention_author=False)
-                                    raise exception_event
+                                    break
+                            else:
+                                _record_context(message.channel.id, "assistant", tyuo_utterance)
+                                await message.reply(f"Something went wrong with the LLM layer.\n`tyuo response: `{tyuo_utterance}`", mention_author=False)
+                                raise exception_event
+                    else:
+                        _record_context(message.channel.id, "assistant", tyuo_utterance)
+                        utterance = tyuo_utterance
 
-                        _record_context(message.channel.id, "assistant", utterance)
+                    if debug_display:
+                        fake_selection_pool = selection_pool[:10] #limit size to make Discord happy
+                        if tyuo_utterance not in fake_selection_pool:
+                            fake_selection_pool[random.randint(0, len(fake_selection_pool)-1)] = tyuo_utterance
+                        utterance += f"\n```//tyuo generation results:\njavascript\n{json.dumps(fake_selection_pool, indent=2, sort_keys=True)}```"
 
+                    try:
                         await message.reply(utterance, mention_author=False)
+                    except discord.HTTPException as e:
+                        await message.reply(f"Something went wrong when sending the response to Discord: {e}", mention_author=False)
                 else:
                     if _query_permission(guild_id, user_id):
                         await message.reply("I don't know enough to respond; please converse in my presence so I can learn more.", mention_author=False)
