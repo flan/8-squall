@@ -251,7 +251,7 @@ async def handle_message(client, message):
 
             debug_display = False
             llm_process = True
-            show_llm_persona = False
+            peek_llm_inputs = False
             while True:
                 if c.startswith('-debug'):
                     c = c[6:].strip()
@@ -262,9 +262,9 @@ async def handle_message(client, message):
                 elif c.startswith('-tyuo'):
                     c = c[5:].strip()
                     llm_process = False
-                elif c.startswith('-persona'):
+                elif c.startswith('-peek'):
                     c = c[8:].strip()
-                    show_llm_persona = True
+                    peek_llm_inputs = True
                 else:
                     break
 
@@ -296,26 +296,26 @@ async def handle_message(client, message):
                     tyuo_utterance = random.choice(selection_pool)
                     
                     if llm_process:
-                        async with message.channel.typing():
-                            attempts = 3
-                            exception_event = None
-                            for i in range(3):
-                                try:
+                        attempts = 3
+                        exception_event = None
+                        for i in range(3):
+                            try:
+                                async with message.channel.typing():
                                     (utterance, persona) = await _llm_augment(tyuo_utterance, _gather_context(message.channel.id))
                                     _record_context(message.channel.id, "assistant", utterance)
-                                    if show_llm_persona:
+                                    if peek_llm_inputs:
                                         utterance += f"\n`{_LLM_NAME} persona: {persona}`"
-                                    if debug_display:
+                                    if peek_llm_inputs or debug_display:
                                         utterance += f"\n`selected tyuo response: {tyuo_utterance}`"
-                                except Exception as e:
-                                    #await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
-                                    exception_event = e
-                                else:
-                                    break
+                            except Exception as e:
+                                #await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
+                                exception_event = e
                             else:
-                                _record_context(message.channel.id, "assistant", tyuo_utterance)
-                                await message.reply(f"Something went wrong with the LLM layer.\n`tyuo response: `{tyuo_utterance}`", mention_author=False)
-                                raise exception_event
+                                break
+                        else:
+                            _record_context(message.channel.id, "assistant", tyuo_utterance)
+                            await message.reply(f"Something went wrong with the LLM layer.\n`tyuo response: `{tyuo_utterance}`", mention_author=False)
+                            raise exception_event
                     else:
                         _record_context(message.channel.id, "assistant", tyuo_utterance)
                         utterance = tyuo_utterance
