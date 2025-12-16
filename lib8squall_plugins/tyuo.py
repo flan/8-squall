@@ -314,7 +314,7 @@ async def handle_message(client, message):
                                 break
                         else:
                             _record_context(message.channel.id, "assistant", tyuo_utterance)
-                            await message.reply(f"Something went wrong with the LLM layer.\n`tyuo response: `{tyuo_utterance}`", mention_author=False)
+                            await message.reply(f"Something went wrong with the LLM layer.\n`tyuo` response: `{tyuo_utterance}`", mention_author=False)
                             raise exception_event
                     else:
                         _record_context(message.channel.id, "assistant", tyuo_utterance)
