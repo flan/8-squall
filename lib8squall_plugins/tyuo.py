@@ -176,7 +176,7 @@ Do not include any links or cite any sources.""",
     
     #put the tyuo result just before the prompt
     messages.insert(-1, {
-        "role": "developer",
+        "role": "user",
         "content": [
             {
                 "type": "text",
