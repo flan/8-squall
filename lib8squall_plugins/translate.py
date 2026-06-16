@@ -26,7 +26,7 @@ async def _translate(simple, content):
     response = await httpx.AsyncClient().post(
         _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
-        data={
+        json={
             "model": _LLM_MODEL,
             "messages": [
                 {
@@ -60,7 +60,7 @@ async def _explain(content):
     response = await httpx.AsyncClient().post(
         _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
-        data={
+        json={
             "model": _LLM_MODEL,
             "messages": [
                 {

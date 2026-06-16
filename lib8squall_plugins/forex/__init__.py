@@ -34,7 +34,7 @@ async def handle_message(client, message):
                 quantity = float(quantity)
                 
             try:
-                current_rate = rates.get_rates(cur1)[cur2]
+                current_rate = (await rates.get_rates(cur1))[cur2]
             except Exception:
                 await message.reply("Unable to fetch current currency data; please try again later.", mention_author=False)
                 raise

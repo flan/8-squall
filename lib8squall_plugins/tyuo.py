@@ -8,7 +8,7 @@ import sqlite3
 import threading
 
 import discord
-import requests
+import httpx
 
 DISCORD_MAGIC_TOKEN_RE = re.compile(r'<.+?>')
 
@@ -191,7 +191,7 @@ Do not include any links or cite any sources.""",
     for message in messages:
         consumed_tokens += _count_tokens(json.dumps(message, separators=(',', ':')))
     
-    response = requests.post(
+    response = await httpx.AsyncClient().post(
         _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
         json={
@@ -272,7 +272,7 @@ async def handle_message(client, message):
 
             try:
                 async with message.channel.typing():
-                    r = requests.post('http://localhost:48100/speak',
+                    r = await httpx.AsyncClient().post('http://localhost:48100/speak',
                         json={
                             "ContextId": context.id,
                             "Input": c,
@@ -345,7 +345,7 @@ async def handle_message(client, message):
                     if len(message.content.split()) >= 5:
                         if not message.content.lower().startswith(('and', 'or', 'but', 'nor', 'yet', 'so', 'for')):
                             lines = [i.strip() for i in message.content.splitlines()]
-                            requests.post('http://localhost:48100/learn',
+                            await httpx.AsyncClient().post('http://localhost:48100/learn',
                                 json={
                                     "ContextId": context.id,
                                     "Input": [i for i in lines if i],

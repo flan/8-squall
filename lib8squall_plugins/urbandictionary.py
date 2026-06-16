@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import requests
+import httpx
 
 def get_help_summary(client, message):
     return (
@@ -16,8 +16,8 @@ _URBAN_DICTIONARY_HEADERS = {
     'x-rapidapi-key': open("./rapidapi.ud.key").read().strip(),
     'x-rapidapi-host': "mashape-community-urban-dictionary.p.rapidapi.com"
 }
-def _get_urbandictionary(phrase):
-    response = requests.request(
+async def _get_urbandictionary(phrase):
+    response = await httpx.AsyncClient().request(
         "GET",
         _URBAN_DICTIONARY_URL,
         headers=_URBAN_DICTIONARY_HEADERS,
@@ -57,7 +57,7 @@ async def handle_message(client, message):
             subject = message.content[len(pattern):].strip()
             if subject:
                 try:
-                    response = _get_urbandictionary(subject.lower())
+                    response = await _get_urbandictionary(subject.lower())
                     if response:
                         await message.reply('\n'.join(_format_response(response)), mention_author=False)
                     else:

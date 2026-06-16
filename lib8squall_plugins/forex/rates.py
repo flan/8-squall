@@ -3,7 +3,7 @@ import collections
 import threading
 import time
 
-import requests
+import httpx
 
 from . import currencies
 
@@ -14,23 +14,23 @@ _CACHE_LOCK = threading.Lock()
 
 _FIXER_API_KEY = open("./fixer.key").read().strip()
 
-def get_rates(currency):
+async def get_rates(currency):
     global _CACHE
     global _CACHE_LAST_UPDATED
     with _CACHE_LOCK:
         if time.time() - _CACHE_LAST_UPDATED > _CACHE_MAX_AGE:
-            #doge_data = requests.get("https://sochain.com/api/v2/get_price/DOGE/USD").json()
+            #doge_data = await httpx.AsyncClient().get("https://sochain.com/api/v2/get_price/DOGE/USD").json()
             #doge_value = 0.0
             #for doge_price_data in doge_data['data']['prices']:
             #    doge_value += float(doge_price_data['price'])
             #doge_value /= len(doge_data['data']['prices'])
             #print("doge value in USD: {}".format(doge_value))
             
-            rates_data = requests.get("http://data.fixer.io/api/latest", params={
+            rates_data = (await httpx.AsyncClient().get("http://data.fixer.io/api/latest", params={
                 "access_key": _FIXER_API_KEY,
                 "base": "EUR",
                 "symbols": ','.join(currencies.CURRENCIES.keys()),
-            }).json()
+            })).json()
             print("fixer.io response: {}".format(rates_data))
             
             _CACHE = {currencies.get_currency(k): v for (k, v) in rates_data['rates'].items()}
