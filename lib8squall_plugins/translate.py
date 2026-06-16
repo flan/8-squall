@@ -29,6 +29,15 @@ async def _translate(simple, content):
             "model": _LLM_MODEL,
             "messages": [
                 {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "You are a professional translator. You will provide a response to the user and not offer any further assistance.",
+                        }
+                    ]
+                },
+                {
                     "role": "user",
                     "content": [
                         {
