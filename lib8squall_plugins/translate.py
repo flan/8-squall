@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 
-import requests
+import httpx
 
 def get_help_summary(client, message):
     return (
@@ -9,6 +9,7 @@ def get_help_summary(client, message):
         (
             "`!tr <message>` to get a simple translation; the input may span multiple lines.",
             "`!translate <message>` will produce a translation with commentary.",
+            "`!explain <message>` will attempt to explain the meaning of a word or phrase.",
             "While multiple languages are supported for input, only English is supported for output.",
         ),
     )
@@ -22,7 +23,7 @@ _LLM_HEADERS = {
 }
 
 async def _translate(simple, content):
-    response = requests.post(
+    response = await httpx.AsyncClient().post(
         _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
         data={
@@ -33,7 +34,7 @@ async def _translate(simple, content):
                     "content": [
                         {
                             "type": "text",
-                            "text": "You are a professional translator. You will provide a response to the user and not offer any further assistance.",
+                            "text": "You are a professional translator. You will provide a response to the user and not ask questions.",
                         }
                     ]
                 },
@@ -45,6 +46,39 @@ async def _translate(simple, content):
                             "text": "Translate the following into English{scope}:\n\n{content}".format(
                                 content=content,
                                 scope=(simple and " without adding any commentary or explanations" or ", explaining sub-phrases"),
+                            ),
+                        },
+                    ],
+                },
+            ],
+        },
+    )
+
+    return response.json()['choices'][0]['message']['content']
+
+async def _explain(content):
+    response = await httpx.AsyncClient().post(
+        _LLM_URL + "chat/completions",
+        headers=_LLM_HEADERS,
+        data={
+            "model": _LLM_MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "You are a professional assistant. You will provide a response to the user and not ask questions.",
+                        }
+                    ]
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Explain the meaning of the following text:\n\n{content}".format(
+                                content=content,
                             ),
                         },
                     ],
@@ -67,6 +101,21 @@ async def handle_message(client, message):
                             await message.reply(response, mention_author=False)
                         else:
                             await message.reply("Unable to translate.", mention_author=False)
+                except Exception:
+                    await message.reply("Something didn't go quite right.", mention_author=False)
+                    raise
+            return True
+    for pattern in ('!explain ', '!explain\n'):
+        if message.content.startswith(pattern):
+            subject = message.content[len(pattern):].strip()
+            if subject:
+                try:
+                    async with message.channel.typing():
+                        response = await _explain(subject)
+                        if response:
+                            await message.reply(response, mention_author=False)
+                        else:
+                            await message.reply("Unable to explain.", mention_author=False)
                 except Exception:
                     await message.reply("Something didn't go quite right.", mention_author=False)
                     raise
