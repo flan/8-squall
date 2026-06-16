@@ -30,6 +30,7 @@ async def _translate(simple, content):
         headers=_LLM_HEADERS,
         json={
             "model": _LLM_MODEL,
+            "temperature": 0.5,
             "messages": [
                 {
                     "role": "system",
@@ -65,6 +66,7 @@ async def _confabulate(simple, content):
         headers=_LLM_HEADERS,
         json={
             "model": _LLM_MODEL,
+            "temperature": 0.75,
             "messages": [
                 {
                     "role": "system",
@@ -100,6 +102,7 @@ async def _bullshirt(content):
         headers=_LLM_HEADERS,
         json={
             "model": _LLM_MODEL,
+            "temperature": 1.1,
             "messages": [
                 {
                     "role": "system",
