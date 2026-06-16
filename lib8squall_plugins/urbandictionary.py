@@ -22,6 +22,7 @@ async def _get_urbandictionary(phrase):
         _URBAN_DICTIONARY_URL,
         headers=_URBAN_DICTIONARY_HEADERS,
         params={"term": phrase},
+        timeout=10,
     )
     
     definitions = []

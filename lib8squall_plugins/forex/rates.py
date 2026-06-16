@@ -30,7 +30,7 @@ async def get_rates(currency):
                 "access_key": _FIXER_API_KEY,
                 "base": "EUR",
                 "symbols": ','.join(currencies.CURRENCIES.keys()),
-            })).json()
+            }, timeout=5)).json()
             print("fixer.io response: {}".format(rates_data))
             
             _CACHE = {currencies.get_currency(k): v for (k, v) in rates_data['rates'].items()}

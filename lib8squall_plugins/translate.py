@@ -9,7 +9,9 @@ def get_help_summary(client, message):
         (
             "`!tr <message>` to get a simple translation; the input may span multiple lines.",
             "`!translate <message>` will produce a translation with commentary.",
-            "`!explain <message>` will attempt to explain the meaning of a word or phrase.",
+            "`!confabulate <message>` will attempt to explain the meaning of a word or phrase.",
+            "`!confab <message>` will attempt to briefly explain the meaning of a word or phrase.",
+            "`!bullshirt <message>` will attempt to trigger intentionally incorrect hallucinations."
             "While multiple languages are supported for input, only English is supported for output.",
         ),
     )
@@ -52,11 +54,12 @@ async def _translate(simple, content):
                 },
             ],
         },
+        timeout=60,
     )
 
     return response.json()['choices'][0]['message']['content']
 
-async def _explain(content):
+async def _confabulate(simple, content):
     response = await httpx.AsyncClient().post(
         _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
@@ -77,7 +80,8 @@ async def _explain(content):
                     "content": [
                         {
                             "type": "text",
-                            "text": "Explain the meaning of the following text:\n\n{content}".format(
+                            "text": "{mode} the meaning of the following text:\n\n{content}".format(
+                                mode='Briefly summarise' if simple else 'Explain',
                                 content=content,
                             ),
                         },
@@ -85,6 +89,46 @@ async def _explain(content):
                 },
             ],
         },
+        timeout=60,
+    )
+
+    return response.json()['choices'][0]['message']['content']
+
+async def _bullshirt(content):
+    response = await httpx.AsyncClient().post(
+        _LLM_URL + "chat/completions",
+        headers=_LLM_HEADERS,
+        json={
+            "model": _LLM_MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": """You are a compulsive liar. You will provide an incorrect response to the user with unverified supporting claims.
+
+You must NOT provide any indication that you are gaslighting.
+
+Do not ask follow-up questions.
+""",
+                        }
+                    ]
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Explain the meaning of the following text. However, be vague, inaccurate, and deceitful:\n\n{content}".format(
+                                content=content,
+                            ),
+                        },
+                    ],
+                },
+            ],
+        },
+        timeout=60,
     )
 
     return response.json()['choices'][0]['message']['content']
@@ -105,17 +149,32 @@ async def handle_message(client, message):
                     await message.reply("Something didn't go quite right.", mention_author=False)
                     raise
             return True
-    for pattern in ('!explain ', '!explain\n'):
+    for pattern in ('!confabulate ', '!confabulate\n', '!confab ', '!confab \n'):
         if message.content.startswith(pattern):
             subject = message.content[len(pattern):].strip()
             if subject:
                 try:
                     async with message.channel.typing():
-                        response = await _explain(subject)
+                        response = await _confabulate(pattern in ('!confab ', '!confab \n'), subject)
                         if response:
                             await message.reply(response, mention_author=False)
                         else:
-                            await message.reply("Unable to explain.", mention_author=False)
+                            await message.reply("Unable to confabulate.", mention_author=False)
+                except Exception:
+                    await message.reply("Something didn't go quite right.", mention_author=False)
+                    raise
+            return True
+    for pattern in ('!bullshirt ', '!bullshirt\n'):
+        if message.content.startswith(pattern):
+            subject = message.content[len(pattern):].strip()
+            if subject:
+                try:
+                    async with message.channel.typing():
+                        response = await _bullshirt(subject)
+                        if response:
+                            await message.reply(response, mention_author=False)
+                        else:
+                            await message.reply("Forking bullshirt.", mention_author=False)
                 except Exception:
                     await message.reply("Something didn't go quite right.", mention_author=False)
                     raise

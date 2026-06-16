@@ -207,6 +207,7 @@ Do not include any links or cite any sources.""",
                 "type": "text",
             },
         },
+        timeout=90,
     )
 
     output = response.json()['choices'][0]['message']['content']
