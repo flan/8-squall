@@ -22,6 +22,7 @@ _LLM_HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
+_LLM_TOKEN_TARGET = 450
 
 async def _llm(content):
     response = await httpx.AsyncClient().post(
@@ -30,6 +31,7 @@ async def _llm(content):
         json={
             "model": _LLM_MODEL,
             "temperature": 0.75,
+            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
@@ -63,6 +65,7 @@ async def _friendbot(content):
         json={
             "model": _LLM_MODEL,
             "temperature": 1.1,
+            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
@@ -101,6 +104,7 @@ async def _confabulate(simple, content):
         json={
             "model": _LLM_MODEL,
             "temperature": 0.75,
+            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
@@ -137,6 +141,7 @@ async def _bullshirt(content):
         json={
             "model": _LLM_MODEL,
             "temperature": 1.1,
+            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
