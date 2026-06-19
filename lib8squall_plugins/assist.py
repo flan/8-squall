@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+import io
 import json
 
+try:
+    import discord
+except Exception as e:
+    print("Unable to import `discord`; file-based reply-functionality will not work")
 import httpx
 
 def get_help_summary(client, message):
@@ -22,7 +27,16 @@ _LLM_HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
-_LLM_TOKEN_TARGET = 400
+
+_DISCORD_FILE_CUTOFF = 1000
+async def _reply(message, response):
+    if len(response) > _DISCORD_FILE_CUTOFF:
+        buffer = io.BytesIO()
+        buffer.write(response.encode('utf-8'))
+        buffer.seek(0)
+        await message.reply(file=discord.File(buffer, 'LLM-rant.txt'), mention_author=False)
+    else:
+        await message.reply(response, mention_author=False)
 
 async def _llm(content):
     response = await httpx.AsyncClient().post(
@@ -31,7 +45,6 @@ async def _llm(content):
         json={
             "model": _LLM_MODEL,
             "temperature": 0.75,
-            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
@@ -65,7 +78,6 @@ async def _friendbot(content):
         json={
             "model": _LLM_MODEL,
             "temperature": 1.1,
-            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
@@ -104,7 +116,6 @@ async def _confabulate(simple, content):
         json={
             "model": _LLM_MODEL,
             "temperature": 0.75,
-            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
@@ -141,7 +152,6 @@ async def _bullshirt(content):
         json={
             "model": _LLM_MODEL,
             "temperature": 1.1,
-            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": [
                 {
                     "role": "system",
@@ -184,7 +194,7 @@ async def handle_message(client, message):
                     async with message.channel.typing():
                         response = await _llm(subject)
                         if response:
-                            await message.reply(response, mention_author=False)
+                            await _reply(message, response)
                         else:
                             await message.reply("Unable to assist.", mention_author=False)
                 except Exception:
@@ -199,7 +209,7 @@ async def handle_message(client, message):
                     async with message.channel.typing():
                         response = await _friendbot(subject)
                         if response:
-                            await message.reply(response, mention_author=False)
+                            await _reply(message, response)
                         else:
                             await message.reply("Unable to 'assist'.", mention_author=False)
                 except Exception:
@@ -214,7 +224,7 @@ async def handle_message(client, message):
                     async with message.channel.typing():
                         response = await _confabulate(pattern in ('!confab ', '!confab\n'), subject)
                         if response:
-                            await message.reply(response, mention_author=False)
+                            await _reply(message, response)
                         else:
                             await message.reply("Unable to confabulate.", mention_author=False)
                 except Exception:
@@ -229,7 +239,7 @@ async def handle_message(client, message):
                     async with message.channel.typing():
                         response = await _bullshirt(subject)
                         if response:
-                            await message.reply(response, mention_author=False)
+                            await _reply(message, response)
                         else:
                             await message.reply("Forking bullshirt.", mention_author=False)
                 except Exception:
