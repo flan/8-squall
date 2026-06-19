@@ -20,7 +20,7 @@ _LLM_HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
-_LLM_TOKEN_TARGET = 450
+_LLM_TOKEN_TARGET = 400
 
 async def _translate(simple, content):
     response = await httpx.AsyncClient().post(

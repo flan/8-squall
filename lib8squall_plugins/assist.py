@@ -22,7 +22,7 @@ _LLM_HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
-_LLM_TOKEN_TARGET = 450
+_LLM_TOKEN_TARGET = 400
 
 async def _llm(content):
     response = await httpx.AsyncClient().post(
@@ -206,13 +206,13 @@ async def handle_message(client, message):
                     await message.reply("Something didn't go quite right.", mention_author=False)
                     raise
             return True
-    for pattern in ('!confabulate ', '!confabulate\n', '!confab ', '!confab \n'):
+    for pattern in ('!confabulate ', '!confabulate\n', '!confab ', '!confab\n'):
         if message.content.startswith(pattern):
             subject = message.content[len(pattern):].strip()
             if subject:
                 try:
                     async with message.channel.typing():
-                        response = await _confabulate(pattern in ('!confab ', '!confab \n'), subject)
+                        response = await _confabulate(pattern in ('!confab ', '!confab\n'), subject)
                         if response:
                             await message.reply(response, mention_author=False)
                         else:
