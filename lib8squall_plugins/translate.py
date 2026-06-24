@@ -3,6 +3,7 @@ import json
 
 import httpx
 
+
 def get_help_summary(client, message):
     return (
         "LLM-backed translation",
@@ -13,66 +14,80 @@ def get_help_summary(client, message):
         ),
     )
 
+
 _LLM_PARAMETERS = json.load(open("./llm-translate.json"))
-_LLM_URL = _LLM_PARAMETERS['url']
-_LLM_MODEL = _LLM_PARAMETERS['model']
+_LLM_URL = _LLM_PARAMETERS["url"]
+_LLM_MODEL = _LLM_PARAMETERS["model"]
 _LLM_HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
 _LLM_TOKEN_TARGET = 400
 
-async def _translate(simple, content):
-    response = await httpx.AsyncClient().post(
-        _LLM_URL + "chat/completions",
-        headers=_LLM_HEADERS,
-        json={
-            "model": _LLM_MODEL,
-            "temperature": 0.5,
-            "max_completion_tokens": _LLM_TOKEN_TARGET,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "You are a professional translator. You will provide a response to the user and not ask questions.",
-                        }
-                    ]
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Translate the following into English{scope}:\n\n{content}".format(
-                                content=content,
-                                scope=(simple and " without adding any commentary or explanations" or ", explaining sub-phrases"),
-                            ),
-                        },
-                    ],
-                },
-            ],
-        },
-        timeout=60,
-    )
 
-    return response.json()['choices'][0]['message']['content']
+async def _translate(simple, content):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            _LLM_URL + "chat/completions",
+            headers=_LLM_HEADERS,
+            json={
+                "model": _LLM_MODEL,
+                "temperature": 0.5,
+                "max_completion_tokens": _LLM_TOKEN_TARGET,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "You are a professional translator. You will provide a response to the user and not ask questions.",
+                            }
+                        ],
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Translate the following into English{scope}:\n\n{content}".format(
+                                    content=content,
+                                    scope=(
+                                        simple
+                                        and " without adding any commentary or explanations"
+                                        or ", explaining sub-phrases"
+                                    ),
+                                ),
+                            },
+                        ],
+                    },
+                ],
+            },
+            timeout=60,
+        )
+
+        return response.json()["choices"][0]["message"]["content"]
+
 
 async def handle_message(client, message):
-    for pattern in ('!tr ', '!tr\n', '!translate ', '!translate\n'):
+    for pattern in ("!tr ", "!tr\n", "!translate ", "!translate\n"):
         if message.content.startswith(pattern):
-            subject = message.content[len(pattern):].strip()
+            subject = message.content[len(pattern) :].strip()
             if subject:
                 try:
                     async with message.channel.typing():
-                        response = await _translate(pattern in ('!tr ', '!tr\n'), subject)
+                        response = await _translate(
+                            pattern in ("!tr ", "!tr\n"), subject
+                        )
                         if response:
                             await message.reply(response, mention_author=False)
                         else:
-                            await message.reply("Unable to translate.", mention_author=False)
+                            await message.reply(
+                                "Unable to translate.", mention_author=False
+                            )
                 except Exception:
-                    await message.reply("Something didn't go quite right.", mention_author=False)
+                    await message.reply(
+                        "Something didn't go quite right.", mention_author=False
+                    )
                     raise
             return True
     return False
