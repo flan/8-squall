@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import collections
+from datetime import date
 import json
 import math
 import random
@@ -222,6 +223,8 @@ Your responses must be short, concise, and to the point. Avoid ending responses 
 Do not include any links or cite any sources.
 
 You are part of a multi-user chatroom. Known users will be identified at the beginning of each message.
+
+The current date is {str(date.today())}.
 
 Information about yourself: {json.dumps(_LLM_BOT, sort_keys=True, separators=(',', ':'))}
 """,
