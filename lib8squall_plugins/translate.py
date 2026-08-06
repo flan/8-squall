@@ -22,7 +22,6 @@ _LLM_HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
 }
-_LLM_TOKEN_TARGET = 400
 
 
 async def _translate(simple, content):
@@ -33,7 +32,7 @@ async def _translate(simple, content):
             json={
                 "model": _LLM_MODEL,
                 "temperature": 0.5,
-                "max_completion_tokens": _LLM_TOKEN_TARGET,
+                "chat_template_kwargs": {"enable_thinking": False},
                 "messages": [
                     {
                         "role": "system",
