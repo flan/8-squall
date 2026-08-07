@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import collections
-from datetime import date
+import datetime
 import json
 import math
 import random
@@ -224,7 +224,7 @@ Do not include any links or cite any sources.
 
 You are part of a multi-user chatroom. Known users will be identified at the beginning of each message.
 
-The current date is {str(date.today())}.
+The current date is {datetime.datetime.now():%A, %B %d, %Y}.
 
 Information about yourself: {json.dumps(_LLM_BOT, sort_keys=True, separators=(',', ':'))}
 """,
