@@ -133,7 +133,7 @@ def _record_context(channel_id, role, user_id, message):
         _LLM_CHANNEL_BUFFERS[channel_id].append((role, user_id, message))
         while True: #trim to token budget
             message_tokens = 0
-            for (role, content) in _LLM_CHANNEL_BUFFERS[channel_id]:
+            for (_, _, content) in _LLM_CHANNEL_BUFFERS[channel_id]:
                 message_tokens += _count_tokens(content)
 
             #if message_tokens > _LLM_TOKEN_TARGET - 1000: #allow some breathing room
@@ -249,11 +249,11 @@ Information about yourself: {json.dumps(_LLM_BOT, sort_keys=True, separators=(',
     for user in _LLM_USERS.values():
         candidate_re = '|'.join(fr"\b{token.lower()}\b" for token in [user['name']] + user.get('aliases', []))
         for message in messages:
-            if re.search(candidate_re, message['content'].lower()):
+            if re.search(candidate_re, message['content'][0]['text'].lower()):
                 relevant_user_entries.append(user)
                 break
     if relevant_user_entries: #add to system prompt
-        messages[0]['content'] += f'\nInformation about users: {json.dumps(relevant_user_entries, sort_keys=True, separators=(',', ':'))}'
+        messages[0]['content'][0]['text'] += f'\nInformation about users: {json.dumps(relevant_user_entries, sort_keys=True, separators=(',', ':'))}'
 
     #put the tyuo result just before the prompt
     messages.insert(-1, {
@@ -350,7 +350,7 @@ async def handle_message(client, message):
                 else:
                     break
 
-            _record_context(message.channel.id, "user", message.user and message.user.id, c)
+            _record_context(message.channel.id, "user", message.author.id, c)
 
             try:
                 async with message.channel.typing():
@@ -420,7 +420,7 @@ async def handle_message(client, message):
 
             return True
         else:
-            _record_context(message.channel.id, "user", message.user and message.user.id, message.content)
+            _record_context(message.channel.id, "user", message.author.id, message.content)
 
             if context.learning: #learning opportunity
                 if _query_permission(guild_id, user_id):
