@@ -106,7 +106,7 @@ _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [
   },
 ])
 #_LLM_SENTENCE_COUNTS = _LLM_PARAMETERS.get("sentences", (1,2,2,2,2,3,3,3,3,3,3,4,4,5))
-_LLM_TOKEN_TARGET = _LLM_PARAMETERS.get("tokenTarget", 400) #should be a little below what the provider supports
+_LLM_CONTEXT_SIZE = _LLM_PARAMETERS.get("contextSize", 8000) #should be a little below what the provider supports
 _LLM_BUFFER_SIZE = _LLM_PARAMETERS.get("buffer", 8)
 
 _LLM_PERSONA_WEIGHTING = [] #a list of sequential 0.0-1.0 values in a tuple with the personality string, calculated from weights
@@ -131,15 +131,12 @@ _LLM_CHANNEL_BUFFERS_LOCK = threading.Lock()
 def _record_context(channel_id, role, user_id, message):
     with _LLM_CHANNEL_BUFFERS_LOCK:
         _LLM_CHANNEL_BUFFERS[channel_id].append((role, user_id, message))
-        while True: #trim to token budget
-            message_tokens = 0
-            for (_, _, content) in _LLM_CHANNEL_BUFFERS[channel_id]:
-                message_tokens += _count_tokens(content)
+        message_tokens = 0
+        for (_, _, content) in _LLM_CHANNEL_BUFFERS[channel_id]:
+            message_tokens += _count_tokens(content)
 
-            #if message_tokens > _LLM_TOKEN_TARGET - 1000: #allow some breathing room
-            #    _LLM_CHANNEL_BUFFERS[channel_id].popleft()
-            else:
-                break
+        if message_tokens > _LLM_CONTEXT_SIZE - 2000: #allow some breathing room
+            _LLM_CHANNEL_BUFFERS[channel_id].popleft()
 
 def _gather_context(channel_id):
     output = []
@@ -270,31 +267,42 @@ Try to incorporate the following idea into your response; you may reword or igno
         ]
     })
 
-    consumed_tokens = 0 #very conservative, lazy estimate
-    for message in messages:
-        consumed_tokens += _count_tokens(json.dumps(message, separators=(',', ':')))
-
     response = await httpx.AsyncClient().post(
         _LLM_URL + "chat/completions",
         headers=_LLM_HEADERS,
         json={
             "model": _LLM_MODEL,
-            "max_completion_tokens": _LLM_TOKEN_TARGET,
             "messages": messages,
             "response_format": {
                 "type": "text",
             },
             #"temperature": 1.025,
             #"top_p": 0.95,
-            "chat_template_kwargs": {"enable_thinking": False},
+            "chat_template_kwargs": {
+                "enable_thinking": True,
+                "reasoning_effort": "low",
+            },
         },
-        timeout=90,
+        timeout=120,
     )
 
-    output = response.json()['choices'][0]['message']['content']
+    response = response.json()['choices'][0]['message']
+    output = response['content']
+    reasoning = response.get('reasoning_content')
     if '</think>' in output:
-        output = output.rsplit('</think>', 1)[1].strip()
-    return (output, persona)
+        (reasoning, output) = output.rsplit('</think>', 1)
+        reasoning = reasoning.replace('<think>', '')
+    elif '[/think]' in output:
+        (reasoning, output) = output.rsplit('[/THINK]', 1)
+        reasoning = reasoning.replace('[THINK]', '')
+    if reasoning:
+        reasoning = reasoning.strip()
+    else:
+        reasoning = None
+
+    #remove anything that looks like a closing XML tag
+    output = re.sub(r'</.*?>$', '', output.strip())
+    return (output, persona, reasoning)
 
 async def handle_message(client, message):
     if message.channel.type != discord.ChannelType.text:
@@ -376,6 +384,7 @@ async def handle_message(client, message):
                     selection_pool = results_by_score[highest_score]
                     selection_pool.extend(results_by_score.get(highest_score - 1, ()))
                     tyuo_utterance = random.choice(selection_pool)
+                    attachment_file = None
 
                     if llm_process:
                         attempts = 3
@@ -383,12 +392,17 @@ async def handle_message(client, message):
                         for i in range(attempts):
                             try:
                                 async with message.channel.typing():
-                                    (utterance, persona) = await _llm_augment(message, tyuo_utterance, _gather_context(message.channel.id))
+                                    (utterance, persona, reasoning) = await _llm_augment(message, tyuo_utterance, _gather_context(message.channel.id))
                                     _record_context(message.channel.id, "assistant", None, utterance)
                                     if peek_llm_inputs:
                                         utterance += f"\n`{_LLM_BOT['name']} persona: {persona}`"
                                     if peek_llm_inputs or debug_display:
                                         utterance += f"\n`selected tyuo response: {tyuo_utterance}`"
+                                        if reasoning:
+                                            buffer = io.BytesIO()
+                                            buffer.write(reasoning.encode("utf-8"))
+                                            buffer.seek(0)
+                                            attachment_file = discord.File(buffer, "reasoning.txt")
                             except Exception as e:
                                 #await message.reply(f"LLM attempt {i + 1} of {attempts} failed...", mention_author=False)
                                 exception_event = e
@@ -409,7 +423,7 @@ async def handle_message(client, message):
                         utterance += f"\n```//tyuo generation results:\njavascript\n{json.dumps(fake_selection_pool, indent=2, sort_keys=True)}```"
 
                     try:
-                        await message.reply(utterance, mention_author=False)
+                        await message.reply(utterance, file=attachment_file, mention_author=False)
                     except discord.HTTPException as e:
                         await message.reply(f"Something went wrong when sending the response to Discord: {e}", mention_author=False)
                 else:
