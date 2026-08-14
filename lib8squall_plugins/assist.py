@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import io
 import json
-import textwrap
 
 try:
     import discord
@@ -37,7 +36,7 @@ _DISCORD_FILE_CUTOFF = 1000
 async def _reply(message, response):
     if len(response) > _DISCORD_FILE_CUTOFF:
         buffer = io.BytesIO()
-        buffer.write(textwrap.fill(response).encode("utf-8"))
+        buffer.write(response.encode("utf-8"))
         buffer.seek(0)
         await message.reply(
             file=discord.File(buffer, "LLM-rant.txt"), mention_author=False
