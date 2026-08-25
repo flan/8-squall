@@ -13,9 +13,7 @@ from . import common
 _HALF_DAY = 12 * 3600
 _ONE_DAY = 24 * 3600
 
-def _prepare_localised_value(identifier, dt):
-    (timezone, expected_identifier) = common.get_timezone(identifier)
-    
+def _prepare_localised_value(timezone, expected_identifier, dt):
     localised_value = timezone.localize(dt, is_dst=None)
     if expected_identifier is not None:
         if localised_value.tzname() != expected_identifier:
@@ -37,8 +35,11 @@ def parse_timestamp_request(request):
         hour += 12
     hour %= 24
     
-    current_time = datetime.datetime.now()
-    return _prepare_localised_value(gd['timezone'], datetime.datetime(
+    (timezone, expected_identifier) = common.get_timezone(gd['timezone'])
+    #Use the date in the requested timezone, not the server's local date,
+    #so the request is always interpreted as the requested zone's today.
+    current_time = datetime.datetime.now(timezone)
+    return _prepare_localised_value(timezone, expected_identifier, datetime.datetime(
         current_time.year, current_time.month, current_time.day,
         hour, minute,
     ))
