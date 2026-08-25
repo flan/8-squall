@@ -25,5 +25,7 @@ async def handle_message(client, message):
                 await message.reply(tzlist.handle_timezone_list(tz.strip() for tz in request.split()), mention_author=False)
         except pytz.exceptions.UnknownTimeZoneError as e:
             await message.reply("Unsupported timezone: `{}`".format(e), mention_author=False)
+        except (pytz.exceptions.AmbiguousTimeError, pytz.exceptions.NonExistentTimeError):
+            await message.reply("That time falls on a DST transition in the requested timezone, so it cannot be resolved to a discrete moment", mention_author=False)
         return True
     return False
