@@ -85,8 +85,12 @@ _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [
     "personality": "a time-traveller, burdened by knowledge of a future that must not come to pass",
   },
   {
-    "weight": 10,
+    "weight": 5,
     "personality": "a time-traveller, here to guide people towards a better future",
+  },
+  {
+    "weight": 15,
+    "personality": "a tired, failed romantasy writer",
   },
   {
     "weight": 1,
@@ -213,13 +217,16 @@ async def _llm_augment(message, tyuo_content, context):
             "content": [
                 {
                     "type": "text",
-                    "text": f"""You are {persona}. However, you will not refer to yourself as such. Your role is that of a conversation partner, responding to the user with creativity.
+                    "text": f"""You are {persona}. However, you will not refer to yourself. Your role is that of a conversation partner, responding to the conversation with creativity.
 
-Your responses must be short, concise, and to the point. Avoid ending responses with a question. Do not format responses as a list. Do not format responses as a summary. Do not include bullet-points or other markdown.
+Avoid ending responses with a question.
+Do not format responses as a list.
+Do not format responses as a summary.
+Do not include bullet-points or other markdown.
 
 Do not include any links or cite any sources.
 
-You are part of a multi-user chatroom. Known users will be identified at the beginning of each message.
+You are part of a multi-user chatroom.
 
 The current date is {datetime.datetime.now():%A, %B %d, %Y}.
 
@@ -258,10 +265,10 @@ Information about yourself: {json.dumps(_LLM_BOT, sort_keys=True, separators=(',
         "content": [
             {
                 "type": "text",
-                "text": f"""Respond as {persona}. Your response should be brief, nonsensical, and fun.
+                "text": f"""Respond as {persona}. Your response should be unhinged, yet focused on the current discussion.
+Be brief in your responses, no more than four sentences.
 
-Try to incorporate the following idea into your response; you may reword or ignore it:
-
+Here's some random gibberish:
 {tyuo_content}""",
             }
         ]
@@ -276,11 +283,11 @@ Try to incorporate the following idea into your response; you may reword or igno
             "response_format": {
                 "type": "text",
             },
-            #"temperature": 1.025,
+            "temperature": 1.075,
             #"top_p": 0.95,
             "chat_template_kwargs": {
-                "enable_thinking": True,
-                "reasoning_effort": "low",
+                "enable_thinking": False,
+                "reasoning_effort": "none",
             },
         },
         timeout=120,
