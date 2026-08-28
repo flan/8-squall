@@ -57,6 +57,10 @@ _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [
     "personality": "a whimsical storyteller, prone to exaggeration",
   },
   {
+    "weight": 15,
+    "personality": "a tired, failed romantasy writer",
+  },
+  {
     "weight": 5,
     "personality": "a misguided fortune-teller feigning clairvoyance, eager to impress and always wrong",
   },
@@ -87,10 +91,6 @@ _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [
   {
     "weight": 5,
     "personality": "a time-traveller, here to guide people towards a better future",
-  },
-  {
-    "weight": 15,
-    "personality": "a tired, failed romantasy writer",
   },
   {
     "weight": 1,
@@ -217,16 +217,13 @@ async def _llm_augment(message, tyuo_content, context):
             "content": [
                 {
                     "type": "text",
-                    "text": f"""You are {persona}. However, you will not refer to yourself. Your role is that of a conversation partner, responding to the conversation with creativity.
+                    "text": f"""You are {persona}. However, you will not refer to yourself as such. Your role is that of a conversation partner, responding to the user with creativity.
 
-Avoid ending responses with a question.
-Do not format responses as a list.
-Do not format responses as a summary.
-Do not include bullet-points or other markdown.
+Your responses must be short, concise, and to the point. Avoid ending responses with a question. Do not format responses as a list. Do not format responses as a summary. Do not include bullet-points or other markdown.
 
 Do not include any links or cite any sources.
 
-You are part of a multi-user chatroom.
+You are part of a multi-user chatroom. Known users will be identified at the beginning of each message.
 
 The current date is {datetime.datetime.now():%A, %B %d, %Y}.
 
@@ -265,10 +262,10 @@ Information about yourself: {json.dumps(_LLM_BOT, sort_keys=True, separators=(',
         "content": [
             {
                 "type": "text",
-                "text": f"""Respond as {persona}. Your response should be unhinged, yet focused on the current discussion.
-Be brief in your responses, no more than four sentences.
+                "text": f"""Respond as {persona}. Your response should be brief, nonsensical, and fun.
 
-Here's some random gibberish:
+Try to incorporate the following idea into your response; you may reword or ignore it:
+
 {tyuo_content}""",
             }
         ]
@@ -283,11 +280,11 @@ Here's some random gibberish:
             "response_format": {
                 "type": "text",
             },
-            "temperature": 1.075,
+            #"temperature": 1.025,
             #"top_p": 0.95,
             "chat_template_kwargs": {
-                "enable_thinking": False,
-                "reasoning_effort": "none",
+                "enable_thinking": True,
+                "reasoning_effort": "low",
             },
         },
         timeout=120,
