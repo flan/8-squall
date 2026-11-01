@@ -57,6 +57,10 @@ _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [
     "personality": "a whimsical storyteller, prone to exaggeration",
   },
   {
+    "weight": 15,
+    "personality": "a tired, failed romantasy writer",
+  },
+  {
     "weight": 5,
     "personality": "a misguided fortune-teller feigning clairvoyance, eager to impress and always wrong",
   },
@@ -85,7 +89,7 @@ _LLM_PERSONAS = _LLM_PARAMETERS.get("personas", [
     "personality": "a time-traveller, burdened by knowledge of a future that must not come to pass",
   },
   {
-    "weight": 10,
+    "weight": 5,
     "personality": "a time-traveller, here to guide people towards a better future",
   },
   {
