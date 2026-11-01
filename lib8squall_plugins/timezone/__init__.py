@@ -18,9 +18,9 @@ async def handle_message(client, message):
     if message.content.startswith('!tz '):
         request = message.content[4:]
         try:
-            (target, timezone_mismatch) = tzdelta.parse_timestamp_request(request)
+            (target, display_name, timezone_mismatch) = tzdelta.parse_timestamp_request(request)
             if target:
-                await message.reply(tzdelta.handle_timezone_delta(target, timezone_mismatch), mention_author=False)
+                await message.reply(tzdelta.handle_timezone_delta(target, display_name, timezone_mismatch), mention_author=False)
             else:
                 await message.reply(tzlist.handle_timezone_list(tz.strip() for tz in request.split()), mention_author=False)
         except pytz.exceptions.UnknownTimeZoneError as e:
