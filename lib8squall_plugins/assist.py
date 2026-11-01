@@ -14,6 +14,7 @@ def get_help_summary(client, message):
         "LLM-backed translation",
         (
             "`!llm <message>` will attempt to generate a maybe-helpful LLM response.",
+            "`!code <message>` will attempt to generate a maybe-helpful coding-oriented LLM response."
             "`!friendbot <message>` will attempt to generate a likely-harmful LLM response.",
             "`!confabulate <message>` will attempt to explain the meaning of a word or concept.",
             "`!confab <message>` will attempt to briefly explain the meaning of a word or concept.",
@@ -23,11 +24,19 @@ def get_help_summary(client, message):
 
 
 _LLM_PARAMETERS = json.load(open("./llm-assist.json"))
-_LLM_URL = _LLM_PARAMETERS["url"]
-_LLM_MODEL = _LLM_PARAMETERS["model"]
-_LLM_HEADERS = {
+_GENERAL_SETTINGS = _LLM_PARAMETERS["general"]
+_GENERAL_URL = _GENERAL_SETTINGS["url"]
+_GENERAL_MODEL = _GENERAL_SETTINGS["model"]
+_GENERAL_HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {_LLM_PARAMETERS.get('key', 'no-key')}",
+    "Authorization": f"Bearer {_GENERAL_SETTINGS.get('key', 'no-key')}",
+}
+_CODE_SETTINGS = _LLM_PARAMETERS["code"]
+_CODE_URL = _CODE_SETTINGS["url"]
+_CODE_MODEL = _CODE_SETTINGS["model"]
+_CODE_HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {_GENERAL_SETTINGS.get('key', 'no-key')}",
 }
 
 _DISCORD_FILE_CUTOFF = 1000
@@ -48,10 +57,10 @@ async def _reply(message, response):
 async def _llm(content):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            _LLM_URL + "chat/completions",
-            headers=_LLM_HEADERS,
+            _GENERAL_URL + "chat/completions",
+            headers=_GENERAL_HEADERS,
             json={
-                "model": _LLM_MODEL,
+                "model": _GENERAL_MODEL,
                 "temperature": 0.75,
                 "messages": [
                     {
@@ -79,14 +88,46 @@ async def _llm(content):
 
         return response.json()["choices"][0]["message"]["content"]
 
+async def _code(content):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            _CODE_URL + "chat/completions",
+            headers=_CODE_HEADERS,
+            json={
+                "model": _CODE_MODEL,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "You are a casual programmer acting as a mentor. You will provide a response to the user and not ask questions.",
+                            }
+                        ],
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": content,
+                            },
+                        ],
+                    },
+                ],
+            },
+            timeout=60,
+        )
+
+        return response.json()["choices"][0]["message"]["content"]
 
 async def _friendbot(content):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            _LLM_URL + "chat/completions",
-            headers=_LLM_HEADERS,
+            _GENERAL_URL + "chat/completions",
+            headers=_GENERAL_HEADERS,
             json={
-                "model": _LLM_MODEL,
+                "model": _GENERAL_MODEL,
                 "temperature": 1.1,
                 "messages": [
                     {
@@ -123,10 +164,10 @@ Do not ask follow-up questions.
 async def _confabulate(simple, content):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            _LLM_URL + "chat/completions",
-            headers=_LLM_HEADERS,
+            _GENERAL_URL + "chat/completions",
+            headers=_GENERAL_HEADERS,
             json={
-                "model": _LLM_MODEL,
+                "model": _GENERAL_MODEL,
                 "temperature": 0.75,
                 "messages": [
                     {
@@ -161,10 +202,10 @@ async def _confabulate(simple, content):
 async def _bullshirt(content):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            _LLM_URL + "chat/completions",
-            headers=_LLM_HEADERS,
+            _GENERAL_URL + "chat/completions",
+            headers=_GENERAL_HEADERS,
             json={
-                "model": _LLM_MODEL,
+                "model": _GENERAL_MODEL,
                 "temperature": 1.1,
                 "messages": [
                     {
@@ -208,6 +249,25 @@ async def handle_message(client, message):
                 try:
                     async with message.channel.typing():
                         response = await _llm(subject)
+                        if response:
+                            await _reply(message, response)
+                        else:
+                            await message.reply(
+                                "Unable to assist.", mention_author=False
+                            )
+                except Exception:
+                    await message.reply(
+                        "Something didn't go quite right.", mention_author=False
+                    )
+                    raise
+            return True
+    for pattern in ("!code ", "!code\n"):
+        if message.content.startswith(pattern):
+            subject = message.content[len(pattern) :].strip()
+            if subject:
+                try:
+                    async with message.channel.typing():
+                        response = await _code(subject)
                         if response:
                             await _reply(message, response)
                         else:
