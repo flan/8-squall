@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
 import json
+import re
 
 try:
     import discord
@@ -14,11 +15,12 @@ def get_help_summary(client, message):
         "LLM-backed translation",
         (
             "`!llm <message>` will attempt to generate a maybe-helpful LLM response.",
-            "`!code <message>` will attempt to generate a maybe-helpful coding-oriented LLM response."
-            "`!friendbot <message>` will attempt to generate a likely-harmful LLM response.",
+            "`!code <message>` will attempt to generate a maybe-helpful coding-oriented LLM response.",
+            "`!eli5 <message>` will attempt to generate a maybe-simple LLM response.",
             "`!confabulate <message>` will attempt to explain the meaning of a word or concept.",
             "`!confab <message>` will attempt to briefly explain the meaning of a word or concept.",
             "`!bullshirt <message>` will attempt to trigger intentionally incorrect hallucinations in explaining a word or concept.",
+            "`!friendbot <message>` will attempt to generate a likely-harmful LLM response.",
         ),
     )
 
@@ -36,13 +38,22 @@ _CODE_URL = _CODE_SETTINGS["url"]
 _CODE_MODEL = _CODE_SETTINGS["model"]
 _CODE_HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {_GENERAL_SETTINGS.get('key', 'no-key')}",
+    "Authorization": f"Bearer {_CODE_SETTINGS.get('key', 'no-key')}",
+}
+_ELI5_SETTINGS = _LLM_PARAMETERS["eli5"]
+_ELI5_URL = _ELI5_SETTINGS["url"]
+_ELI5_MODEL = _ELI5_SETTINGS["model"]
+_ELI5_HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {_ELI5_SETTINGS.get('key', 'no-key')}",
 }
 
 _DISCORD_FILE_CUTOFF = 1000
 
+_XML_EDGE_TAG_RE = re.compile(r"^\s*</?[A-Za-z][^<>]*>\s*|\s*</?[A-Za-z][^<>]*>\s*$")
 
 async def _reply(message, response):
+    response = _XML_EDGE_TAG_RE.sub("", response).strip()
     if len(response) > _DISCORD_FILE_CUTOFF:
         buffer = io.BytesIO()
         buffer.write(response.encode("utf-8"))
@@ -111,6 +122,39 @@ async def _code(content):
                             {
                                 "type": "text",
                                 "text": content,
+                            },
+                        ],
+                    },
+                ],
+            },
+            timeout=60,
+        )
+
+        return response.json()["choices"][0]["message"]["content"]
+
+async def _eli5(content):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            _CODE_URL + "chat/completions",
+            headers=_ELI5_HEADERS,
+            json={
+                "model": _ELI5_MODEL,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "You are a friendly mentor. You will provide a response to the user in the style of the Explain Like I'm 5 subreddit and not ask questions.",
+                            }
+                        ],
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Please explain the following concept in simple terms; be brief:\n\n{content}",
                             },
                         ],
                     },
@@ -268,6 +312,25 @@ async def handle_message(client, message):
                 try:
                     async with message.channel.typing():
                         response = await _code(subject)
+                        if response:
+                            await _reply(message, response)
+                        else:
+                            await message.reply(
+                                "Unable to assist.", mention_author=False
+                            )
+                except Exception:
+                    await message.reply(
+                        "Something didn't go quite right.", mention_author=False
+                    )
+                    raise
+            return True
+    for pattern in ("!eli5 ", "!eli5\n"):
+        if message.content.startswith(pattern):
+            subject = message.content[len(pattern) :].strip()
+            if subject:
+                try:
+                    async with message.channel.typing():
+                        response = await _eli5(subject)
                         if response:
                             await _reply(message, response)
                         else:
